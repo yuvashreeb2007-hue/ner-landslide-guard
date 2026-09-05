@@ -48,7 +48,7 @@ class IncidentSchema(BaseModel):
 class AlertSchema(BaseModel):
     id: str
     title: str
-    level: str  # RED, ORANGE, YELLOW, GREEN
+    level: str  # CRITICAL, DANGER, WARNING, WATCH, INFO
     category: str
     district: str
     state: str
@@ -58,6 +58,32 @@ class AlertSchema(BaseModel):
     validUntil: str
     bulletinNumber: str
     affectedPopulation: int
+    reason: Optional[str] = None
+    status: str = "ACTIVE"
+    deliveryChannels: List[str] = ["APP", "SMS", "PUSH"]
+
+class AlertEvaluationRequest(BaseModel):
+    district: str
+    state: str
+    location: str
+    riskScore: int = Field(..., ge=0, le=100)
+    rainfall24h: float = Field(..., ge=0)
+    soilMoisture: float = Field(..., ge=0, le=100)
+    slope: float = Field(..., ge=0, le=90)
+    criticalSensorTriggered: bool = False
+    verifiedFieldReportsCount: int = 0
+    populationExposed: int = 5000
+
+class AlertEvaluationResponse(BaseModel):
+    triggered: bool
+    severity: str  # CRITICAL, DANGER, WARNING, WATCH, INFO
+    title: str
+    message: str
+    reason: str
+    recommendedAction: str
+    affectedPopulation: int
+    matchedRules: List[str]
+    deliveryChannels: List[str]
 
 class WeatherSchema(BaseModel):
     district: str

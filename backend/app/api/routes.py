@@ -10,6 +10,8 @@ from app.schemas.common import (
     RiskZoneSchema,
     IncidentSchema,
     AlertSchema,
+    AlertEvaluationRequest,
+    AlertEvaluationResponse,
     WeatherSchema,
     FieldReportCreate,
     FieldReportSchema
@@ -118,9 +120,95 @@ def get_incidents(
     description="Fetches active RED, ORANGE, and YELLOW early warning advisories issued by GSI / NDMA / SDMAs."
 )
 def get_alerts(
-    level: Optional[str] = Query(None, description="Filter alerts by level (RED, ORANGE, YELLOW)")
+    level: Optional[str] = Query(None, description="Filter alerts by level (CRITICAL, DANGER, WARNING, WATCH, INFO)")
 ):
     return prediction_service.get_all_alerts(level=level)
+
+@router.post(
+    "/alerts/evaluate",
+    response_model=AlertEvaluationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Evaluate Geotechnical & Weather Inputs Against Alert Rules",
+    description="Evaluates risk score, 24h rainfall, soil moisture saturation, slope, IoT sensor alarms, and verified field reports to determine alert severity tier."
+)
+def evaluate_alert_rules(payload: AlertEvaluationRequest) -> AlertEvaluationResponse:
+    matched_rules = []
+    reasons = []
+    severity_rank = 0  # 0: INFO, 1: WATCH, 2: WARNING, 3: DANGER, 4: CRITICAL
+
+    if payload.riskScore >= 80:
+        severity_rank = max(severity_rank, 4)
+        matched_rules.append("RULE-01-CRIT-RISK (Risk Score >= 80)")
+        reasons.append(f"Composite AI landslide risk score is critical ({payload.riskScore}/100)")
+    elif payload.riskScore >= 60:
+        severity_rank = max(severity_rank, 2)
+        matched_rules.append("RULE-02-WARN-RISK (Risk Score >= 60)")
+        reasons.append(f"High risk index ({payload.riskScore}/100) on vulnerable geological formation")
+    elif payload.riskScore >= 40:
+        severity_rank = max(severity_rank, 1)
+
+    if payload.rainfall24h > 120:
+        severity_rank = max(severity_rank, 3)
+        severity_rank = min(4, severity_rank + 1)
+        matched_rules.append("RULE-03-EXTREME-RAIN (24h Rainfall > 120mm)")
+        reasons.append(f"Extreme 24h rainfall ({payload.rainfall24h} mm) exceeding regional threshold")
+    elif payload.rainfall24h > 70 and payload.slope > 25:
+        severity_rank = max(severity_rank, 2)
+        severity_rank = min(4, severity_rank + 1)
+        matched_rules.append("RULE-04-HIGH-RAIN (24h Rainfall > 70mm on Steep Slope)")
+        reasons.append(f"Heavy 24h rainfall ({payload.rainfall24h} mm) on acute slope ({payload.slope}°)")
+
+    if payload.soilMoisture >= 85:
+        severity_rank = max(severity_rank, 3)
+        matched_rules.append("RULE-05-SOIL-SATURATION (Soil Moisture >= 85%)")
+        reasons.append(f"Critical soil moisture saturation ({payload.soilMoisture}%) with pore-water pressure spike")
+
+    if payload.criticalSensorTriggered:
+        severity_rank = 4
+        matched_rules.append("RULE-06-SENSOR-CRITICAL (Geotechnical Sensor Threshold Exceeded)")
+        reasons.append("Active IoT inclinometer/extensometer sensor alarm triggered")
+
+    if payload.verifiedFieldReportsCount >= 1 and payload.riskScore >= 50:
+        severity_rank = min(4, severity_rank + 1)
+        matched_rules.append(f"RULE-07-VERIFIED-REPORT-BOOST ({payload.verifiedFieldReportsCount} Verified Ground Reports)")
+        reasons.append(f"{payload.verifiedFieldReportsCount} verified field reports confirm ground fissures or active slide")
+
+    ranks = ["INFO", "WATCH", "WARNING", "DANGER", "CRITICAL"]
+    severity = ranks[severity_rank]
+    triggered = severity_rank >= 1
+
+    actions = {
+        "CRITICAL": "Mandatory immediate evacuation of valley and toe settlements. Total highway closure. Mobilize NDRF/SDRF emergency search & rescue teams.",
+        "DANGER": "Issue pre-evacuation alert to vulnerable households. Restrict heavy traffic on mountain corridors.",
+        "WARNING": "Advise residents to avoid steep cut-slopes and stream gullies. Put road clearance equipment on standby.",
+        "WATCH": "Monitor live IoT sensor telemetry. Maintain communication with local village disaster management committees.",
+        "INFO": "Continue standard baseline surveillance."
+    }
+
+    titles = {
+        "CRITICAL": f"CRITICAL LANDSLIDE WARNING: Immediate Slope Failure Threat in {payload.district}",
+        "DANGER": f"DANGER ADVISORY: Severe Geotechnical Destabilization in {payload.district}",
+        "WARNING": f"LANDSLIDE WARNING: Heavy Rainfall & Elevated Risk in {payload.district}",
+        "WATCH": f"LANDSLIDE WATCH: Saturated Soil & Moderate Vulnerability in {payload.district}",
+        "INFO": f"ROUTINE MONITORING: Normal Geotechnical Conditions in {payload.district}"
+    }
+
+    reason_str = ". ".join(reasons) + "." if reasons else "Geotechnical indices within regular baseline parameters."
+
+    pop_mult = 1.0 if severity == "CRITICAL" else 0.75 if severity == "DANGER" else 0.5 if severity == "WARNING" else 0.25
+    affected_pop = int(payload.populationExposed * pop_mult)
+
+    return AlertEvaluationResponse(
+        triggered=triggered,
+        severity=severity,
+        title=titles.get(severity, f"Advisory for {payload.district}"),
+        message=f"Landslide hazard status for {payload.location} ({payload.district}, {payload.state}) calculated as {severity}.",
+        reason=reason_str,
+        recommendedAction=actions.get(severity, "Maintain surveillance."),
+        affectedPopulation=affected_pop,
+        matchedRules=matched_rules,
+        deliveryChannels=["APP", "SMS", "PUSH"]
+    )
 
 @router.get(
     "/weather",
