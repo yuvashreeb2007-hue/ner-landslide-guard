@@ -171,7 +171,7 @@ export function createIncidentIcon(L: any, type: IncidentType) {
   });
 }
 
-export function createSensorIcon(L: any, type: SensorType, isCrit: boolean) {
+export function createSensorIcon(L: any, type: SensorType | string, isCrit: boolean) {
   const color = isCrit ? '#ef4444' : '#06b6d4';
   return L.divIcon({
     className: 'custom-sensor-marker',

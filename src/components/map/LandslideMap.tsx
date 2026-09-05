@@ -5,6 +5,7 @@ import { useEOC } from '@/context/EOCContext';
 import { RiskZone, Village, Incident, Sensor, Road, FieldReport } from '@/types';
 import { MOCK_GIS_RISK_ZONES, MOCK_GIS_VILLAGES } from '@/data/mockRiskZones';
 import { MOCK_ROADS, MOCK_SENSORS, MOCK_INCIDENTS, MOCK_FIELD_REPORTS } from '@/data/mockData';
+import { INITIAL_NER_SENSORS } from '@/services/sensor/sensorData';
 import { BASE_TILES, BaseTileKey } from '@/services/map/tileService';
 import { NER_CENTER, STATE_CENTERS } from '@/services/map/geoService';
 import {
@@ -395,30 +396,45 @@ export function LandslideMap({
 
     // LAYER 5: Sensors
     if (layers.sensors) {
-      MOCK_SENSORS.forEach((s) => {
-        const isCrit = s.status === 'Critical';
-        const icon = createSensorIcon(L, s.type, isCrit);
-        const sMarker = L.marker([s.lat, s.lng], { icon });
+      INITIAL_NER_SENSORS.forEach((s) => {
+        const isCrit = s.status === 'CRITICAL';
+        const isWarn = s.status === 'WARNING';
+        const isOff = s.status === 'OFFLINE';
+        const icon = createSensorIcon(L, s.sensorType, isCrit);
+        const sMarker = L.marker([s.latitude, s.longitude], { icon });
+
+        const statusColor = isCrit ? '#ef4444' : isWarn ? '#f59e0b' : isOff ? '#64748b' : '#10b981';
 
         sMarker.bindPopup(`
-          <div style="font-family: Inter, sans-serif; padding: 4px;">
+          <div style="font-family: Inter, sans-serif; padding: 4px; min-width: 230px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <span style="font-size: 9px; font-weight: bold; background: #082f49; color: #38bdf8; padding: 2px 4px; border-radius: 2px;">
-                ${s.type.toUpperCase()}
+              <span style="font-size: 9px; font-weight: bold; background: #082f49; color: #38bdf8; padding: 2px 5px; border-radius: 3px; font-family: monospace;">
+                ${s.sensorId}
               </span>
-              <span style="font-size: 10px; color: ${isCrit ? '#ef4444' : '#10b981'}; font-weight: bold;">
+              <span style="font-size: 9px; color: ${statusColor}; font-weight: bold; padding: 2px 5px; border-radius: 3px; border: 1px solid ${statusColor};">
                 ${s.status}
               </span>
             </div>
-            <h4 style="font-size: 12px; font-weight: bold; color: #ffffff; margin-bottom: 2px;">${s.name}</h4>
-            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">
-              Location: ${s.locationName}, ${s.district}
+            <h4 style="font-size: 12px; font-weight: 800; color: #ffffff; margin-bottom: 2px;">${s.location}</h4>
+            <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px;">
+              District: <b>${s.district}, ${s.state}</b> • Type: <b style="color: #38bdf8;">${s.sensorType}</b>
             </div>
-            <div style="background: #080c14; padding: 6px; border-radius: 4px; border: 1px solid #1e2f4a; font-size: 11px; margin-bottom: 4px;">
-              Current Reading: <b style="color: ${isCrit ? '#ef4444' : '#38bdf8'};">${s.currentValue} ${s.unit}</b>
+            <div style="background: #080c14; padding: 6px 8px; border-radius: 6px; border: 1px solid #1e2f4a; font-size: 11px; margin-bottom: 6px; font-family: monospace;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                <span style="color: #94a3b8;">Current Value:</span>
+                <b style="color: ${isCrit ? '#ef4444' : '#38bdf8'};">${s.currentValue} ${s.unit}</b>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: #94a3b8;">Safety Threshold:</span>
+                <b style="color: #f59e0b;">${s.threshold} ${s.unit}</b>
+              </div>
             </div>
-            <div style="font-size: 9px; color: #64748b;">
-              Battery: ${s.batteryLevel}% • Signal: ${s.signalStrength}% • Sync: ${s.lastTransmission}
+            <div style="display: flex; justify-content: space-between; font-size: 9px; color: #64748b; font-family: monospace; border-top: 1px solid #1e2f4a; padding-top: 4px;">
+              <span>Battery: <b>${s.battery}%</b></span>
+              <span>Signal: <b>${s.signalStrength}%</b></span>
+            </div>
+            <div style="font-size: 8px; color: #475569; font-family: monospace; margin-top: 2px; text-align: right;">
+              Last update: ${new Date(s.lastUpdated).toLocaleTimeString()}
             </div>
           </div>
         `);
