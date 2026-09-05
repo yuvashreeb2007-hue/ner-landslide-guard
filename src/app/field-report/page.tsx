@@ -2,8 +2,15 @@
 
 import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useEOC } from '@/context/EOCContext';
-import { IncidentType, RiskLevel, ReporterType, NERState } from '@/types';
+import { 
+  reportingService, 
+  visionService, 
+  ReportIncidentType, 
+  ReportSeverity, 
+  ReporterType, 
+  VisionAnalysisResult,
+  SAMPLE_DISASTER_PHOTOS 
+} from '@/services/reporting';
 import { 
   Send, 
   MapPin, 
@@ -11,392 +18,767 @@ import {
   Video, 
   AlertTriangle, 
   CheckCircle2, 
-  Compass, 
-  Smartphone, 
+  Navigation, 
+  Sparkles, 
   User, 
-  Phone,
+  Phone, 
+  Layers, 
+  ShieldAlert, 
+  ArrowRight, 
+  ArrowLeft, 
+  Check, 
+  RefreshCw, 
+  Eye, 
+  Flame, 
   FileText,
-  UploadCloud,
-  Navigation,
-  Sparkles
+  Clock,
+  Compass,
+  Zap,
+  Info
 } from 'lucide-react';
 import Link from 'next/link';
 
+const INCIDENT_TYPES: { id: ReportIncidentType; label: string; icon: string; desc: string }[] = [
+  { id: 'Landslide', label: 'Landslide / Mudflow', icon: '⛰️', desc: 'Slope failure, falling debris, mud inundation' },
+  { id: 'Road Blockage', label: 'Road Blockage', icon: '🚧', desc: 'Boulders, earth slip blocking highway or path' },
+  { id: 'Crack', label: 'Slope / Berm Crack', icon: '⚡', desc: 'Tension fissure opening on road, ground or wall' },
+  { id: 'Slope Movement', label: 'Slope Creep', icon: '📐', desc: 'Gradual subsidence, tilting trees, wall bulge' },
+  { id: 'Flood', label: 'Flash Flood / Culvert Choke', icon: '🌊', desc: 'Water overtopping, debris damming, erosion' },
+];
+
+const SEVERITY_LEVELS: { id: ReportSeverity; label: string; color: string; bg: string; border: string; desc: string }[] = [
+  { id: 'LOW', label: 'LOW VIGILANCE', color: 'text-emerald-400', bg: 'bg-emerald-950/40', border: 'border-emerald-800', desc: 'Minor soil slip, no immediate infrastructure threat' },
+  { id: 'MODERATE', label: 'MODERATE CONCERN', color: 'text-amber-400', bg: 'bg-amber-950/40', border: 'border-amber-800', desc: 'Partial lane obstruction, active slow movement' },
+  { id: 'HIGH', label: 'HIGH URGENCY', color: 'text-orange-400', bg: 'bg-orange-950/40', border: 'border-orange-800', desc: 'Major road blocked, tension cracks spreading rapidly' },
+  { id: 'CRITICAL', label: 'CRITICAL EMERGENCY', color: 'text-red-400', bg: 'bg-red-950/60', border: 'border-red-700', desc: 'Imminent threat to life, habitations, or strategic lifelines' },
+];
+
+const NER_STATES_DISTRICTS: Record<string, string[]> = {
+  'Sikkim': ['Pakyong', 'Gangtok', 'Mangan', 'Gyalshing', 'Namchi', 'Soreng'],
+  'Meghalaya': ['East Khasi Hills', 'West Khasi Hills', 'Ri-Bhoi', 'West Jaintia Hills', 'East Garo Hills'],
+  'Manipur': ['Noney', 'Tamenglong', 'Imphal West', 'Churachandpur', 'Senapati', 'Kangpokpi'],
+  'Assam': ['Dima Hasao', 'Karbi Anglong', 'Cachar', 'Kamrup Metropolitan', 'Hailakandi'],
+  'Arunachal Pradesh': ['West Kameng', 'Tawang', 'Papum Pare', 'East Siang', 'Lower Subansiri'],
+  'Mizoram': ['Aizawl', 'Lunglei', 'Champhai', 'Mamit', 'Kolasib', 'Serchhip'],
+  'Nagaland': ['Kohima', 'Chumukedima', 'Dimapur', 'Mokokchung', 'Wokha', 'Phek'],
+  'Tripura': ['North Tripura', 'Dhalai', 'Unakoti', 'West Tripura', 'South Tripura'],
+};
+
 export default function FieldReportPage() {
-  const { submitFieldReport } = useEOC();
+  // Wizard current step: 1 to 6
+  const [step, setStep] = useState<number>(1);
 
+  // Form Fields
+  const [incidentType, setIncidentType] = useState<ReportIncidentType>('Landslide');
+  const [state, setState] = useState<string>('Sikkim');
+  const [district, setDistrict] = useState<string>('Pakyong');
+  const [village, setVillage] = useState<string>('Singtam Lower Bazaar');
+  const [latitude, setLatitude] = useState<number>(27.2345);
+  const [longitude, setLongitude] = useState<number>(88.5123);
+  const [description, setDescription] = useState<string>('');
+  const [roadBlocked, setRoadBlocked] = useState<boolean>(true);
+  const [structuresAtRisk, setStructuresAtRisk] = useState<number>(2);
+  const [severity, setSeverity] = useState<ReportSeverity>('HIGH');
+  const [photoUrl, setPhotoUrl] = useState<string>(SAMPLE_DISASTER_PHOTOS[0].url);
+  const [videoUrl, setVideoUrl] = useState<string>('');
   const [reporterType, setReporterType] = useState<ReporterType>('Citizen');
-  const [reporterName, setReporterName] = useState('');
-  const [contactNumber, setContactNumber] = useState('');
-  const [state, setState] = useState<NERState>('Sikkim');
-  const [district, setDistrict] = useState('Pakyong');
-  const [landmark, setLandmark] = useState('');
-  const [hazardType, setHazardType] = useState<IncidentType>('Landslide');
-  const [severity, setSeverity] = useState<RiskLevel>('HIGH');
-  const [description, setDescription] = useState('');
-  const [lat, setLat] = useState<number>(27.2345);
-  const [lng, setLng] = useState<number>(88.5123);
-  const [photoName, setPhotoName] = useState<string | null>(null);
-  const [videoName, setVideoName] = useState<string | null>(null);
+  const [reporterName, setReporterName] = useState<string>('Tashi Bhutia');
+  const [contactPhone, setContactPhone] = useState<string>('+91 98451 22341');
 
-  const [submittedId, setSubmittedId] = useState<string | null>(null);
+  // AI Computer Vision State
+  const [isAnalyzingVision, setIsAnalyzingVision] = useState<boolean>(false);
+  const [visionResult, setVisionResult] = useState<VisionAnalysisResult | null>(null);
 
-  const handleUseCurrentLocation = () => {
-    if (navigator.geolocation) {
+  // Submission State
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [submittedReport, setSubmittedReport] = useState<any | null>(null);
+
+  // Step 2: Handle GPS Locate Me
+  const handleLocateMe = () => {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setLat(Number(pos.coords.latitude.toFixed(4)));
-          setLng(Number(pos.coords.longitude.toFixed(4)));
+          setLatitude(Number(pos.coords.latitude.toFixed(4)));
+          setLongitude(Number(pos.coords.longitude.toFixed(4)));
         },
         () => {
-          // fallback
-          setLat(27.2345);
-          setLng(88.5123);
+          // fallback location
+          setLatitude(27.2345);
+          setLongitude(88.5123);
         }
       );
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newId = submitFieldReport({
-      reporterType,
-      reporterName: reporterName || 'Anonymous Citizen Reporter',
-      contactNumber: contactNumber || '+91-XXXXXXXXXX',
-      district,
-      state,
-      landmark: landmark || `${hazardType} near ${district}`,
-      lat,
-      lng,
-      hazardType,
-      severity,
-      description,
-      photoUrl: photoName ? `/uploads/${photoName}` : undefined,
-      videoUrl: videoName ? `/uploads/${videoName}` : undefined,
-    });
+  // Step 5: Trigger AI Computer Vision Scan
+  const handleRunAiVisionScan = async (selectedUrl?: string) => {
+    setIsAnalyzingVision(true);
+    try {
+      const targetImg = selectedUrl || photoUrl;
+      const res = await visionService.analyzeImage(targetImg, incidentType);
+      setVisionResult(res);
+      // Auto-suggest severity from vision if higher
+      if (res.severity === 'CRITICAL') setSeverity('CRITICAL');
+    } catch (err) {
+      console.error('Vision analysis error:', err);
+    } finally {
+      setIsAnalyzingVision(false);
+    }
+  };
 
-    setSubmittedId(newId);
+  // Step 6: Final Submission
+  const handleFinalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const record = await reportingService.submitReport({
+        incidentType,
+        description: description || `Reported ${incidentType} in ${village}, ${district}.`,
+        severity,
+        latitude,
+        longitude,
+        district,
+        state,
+        village,
+        photoUrl,
+        videoUrl: videoUrl || undefined,
+        reporterType,
+        reporterName: reporterName || 'Community Reporter',
+        contactPhone,
+        roadBlocked,
+        structuresAtRisk,
+        aiVisionAnalysis: visionResult || undefined,
+      });
+      setSubmittedReport(record);
+    } catch (err) {
+      console.error('Submission failed:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
-    setSubmittedId(null);
+    setSubmittedReport(null);
+    setStep(1);
     setDescription('');
-    setLandmark('');
-    setPhotoName(null);
-    setVideoName(null);
+    setVisionResult(null);
   };
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto space-y-5">
-        {/* Header Banner */}
-        <div className="bg-gradient-to-r from-amber-950/80 via-eoc-card to-slate-900 p-5 rounded-xl border border-amber-900/60 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="bg-eoc-card p-4 md:p-5 rounded-xl border border-eoc-border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-600 text-slate-950 font-bold shadow-md shadow-amber-950 shrink-0">
-              <Send className="h-6 w-6" />
+            <div className="p-2.5 rounded-lg bg-amber-950/80 text-amber-400 border border-amber-800/80 shadow-inner">
+              <Camera className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-base md:text-lg font-black text-white font-mono tracking-wide">
-                CITIZEN & FIELD OFFICER GROUND INCIDENT REPORTING PORTAL
-              </h1>
-              <p className="text-xs text-amber-200/80">
-                Direct crowd-sourcing portal to report active landslides, tension cracks, rockfalls & road blockages
+              <div className="flex items-center gap-2">
+                <h1 className="text-base md:text-lg font-black text-white font-mono tracking-wide">
+                  FIELD HAZARD REPORTING PORTAL
+                </h1>
+                <span className="bg-amber-900/40 text-amber-300 text-[10px] font-mono px-2 py-0.5 rounded border border-amber-700/50">
+                  Citizen & First Responder
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Submit crowdsourced observations with instant AI Computer Vision damage assessment
               </p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/reports"
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 font-mono text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all"
+            >
+              <Eye className="h-4 w-4 text-sky-400" />
+              <span>Admin Moderation Queue</span>
+            </Link>
           </div>
         </div>
 
-        {submittedId ? (
-          /* Submission Success Card */
-          <div className="bg-eoc-card border border-emerald-700/80 rounded-2xl p-8 text-center space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
-            <div className="inline-flex p-4 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 shadow-xl">
-              <CheckCircle2 className="h-12 w-12" />
-            </div>
-            <div className="space-y-1">
-              <h2 className="text-xl font-bold text-white">
-                Field Incident Report Successfully Dispatched!
+        {/* ========================================================================= */}
+        {/* POST-SUBMISSION CONFIRMATION SCREEN */}
+        {/* ========================================================================= */}
+        {submittedReport ? (
+          <div className="bg-gradient-to-br from-slate-900 via-eoc-card to-slate-950 border border-emerald-600/60 rounded-2xl p-6 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-300">
+            <div className="text-center space-y-2">
+              <div className="inline-flex p-3 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-600 shadow-lg">
+                <CheckCircle2 className="h-10 w-10" />
+              </div>
+              <h2 className="text-lg md:text-xl font-black text-white font-mono tracking-wide">
+                DISASTER HAZARD REPORT TRANSMITTED
               </h2>
               <p className="text-xs text-slate-300 max-w-md mx-auto">
-                Your report has been securely transmitted to the State Disaster Management Authority (SDMA) & GSI Early Warning Command.
+                Your field submission has been registered with the State Emergency Operations Center and queued for engineer verification.
               </p>
             </div>
 
-            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 max-w-sm mx-auto font-mono text-xs">
-              <span className="text-slate-400 block mb-1">INCIDENT TRACKING ID:</span>
-              <span className="text-xl font-black text-sky-400">{submittedId}</span>
-              <div className="text-[10px] text-emerald-400 mt-1">Status: Pending Verification by EOC Scout</div>
+            {/* Incident Summary Card */}
+            <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3 font-mono text-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase">GENERATED INCIDENT ID</span>
+                  <span className="text-base font-black text-sky-400 tracking-wider">
+                    {submittedReport.id}
+                  </span>
+                </div>
+                <div className="sm:text-right">
+                  <span className="text-[10px] text-slate-400 block uppercase">CURRENT STATUS</span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-950 text-amber-300 border border-amber-700 font-bold">
+                    <Clock className="h-3.5 w-3.5" />
+                    {submittedReport.status}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div>
+                  <span className="text-slate-500 text-[10px] block">HAZARD TYPE</span>
+                  <span className="font-bold text-white font-sans">{submittedReport.incidentType}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-[10px] block">SEVERITY LEVEL</span>
+                  <span className={`font-bold ${submittedReport.severity === 'CRITICAL' ? 'text-red-400' : 'text-amber-400'}`}>
+                    {submittedReport.severity}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-[10px] block">LOCATION</span>
+                  <span className="font-bold text-slate-200 font-sans truncate block">
+                    {submittedReport.village}, {submittedReport.district}
+                  </span>
+                </div>
+              </div>
+
+              {submittedReport.aiVisionAnalysis && (
+                <div className="bg-purple-950/30 border border-purple-800/60 p-3 rounded-lg space-y-1 font-sans">
+                  <div className="flex items-center gap-1.5 text-purple-300 font-mono text-[11px] font-bold">
+                    <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                    <span>AI Computer Vision Verified Issue:</span>
+                  </div>
+                  <p className="text-xs text-slate-200">
+                    {submittedReport.aiVisionAnalysis.detectedIssue} ({(submittedReport.aiVisionAnalysis.confidence * 100).toFixed(0)}% Confidence)
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="pt-4 flex items-center justify-center gap-3">
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link
+                href="/reports"
+                className="w-full sm:w-auto px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-mono text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-sky-950"
+              >
+                <span>Track Report in Moderation Queue</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <Link
+                href="/map"
+                className="w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-xs font-bold rounded-lg border border-slate-700 flex items-center justify-center gap-2 transition-all"
+              >
+                <MapPin className="h-3.5 w-3.5 text-sky-400" />
+                <span>View On GIS Map</span>
+              </Link>
               <button
                 onClick={handleReset}
-                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-lg text-xs"
+                className="w-full sm:w-auto px-4 py-2.5 bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white font-mono text-xs rounded-lg transition-all"
               >
                 Submit Another Report
               </button>
-              <Link
-                href="/reports"
-                className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-lg shadow-sky-950"
-              >
-                <FileText className="h-4 w-4" />
-                <span>View in Verification Queue</span>
-              </Link>
             </div>
           </div>
         ) : (
-          /* Main Submission Form */
-          <form onSubmit={handleSubmit} className="bg-eoc-card border border-eoc-border rounded-xl p-6 shadow-2xl space-y-6 text-xs">
-            {/* Step 1: Reporter Information */}
-            <div className="space-y-3 border-b border-eoc-border pb-5">
-              <div className="flex items-center gap-2 text-sky-400 font-bold uppercase font-mono text-xs">
-                <User className="h-4 w-4" />
-                <span>1. Reporter Designation & Contact</span>
+          /* ========================================================================= */
+          /* 6-STEP MOBILE-FRIENDLY REPORTING WIZARD */
+          /* ========================================================================= */
+          <div className="bg-eoc-card border border-eoc-border rounded-xl p-5 md:p-6 shadow-2xl space-y-6">
+            {/* Step Progress Tracker */}
+            <div className="border-b border-eoc-border pb-4">
+              <div className="flex items-center justify-between text-xs font-mono text-slate-400 mb-2">
+                <span>STEP {step} OF 6</span>
+                <span className="text-amber-400 font-bold">
+                  {step === 1 && '1. Incident Type'}
+                  {step === 2 && '2. Location Capture'}
+                  {step === 3 && '3. Hazard Description'}
+                  {step === 4 && '4. Severity Rating'}
+                  {step === 5 && '5. Media & AI Vision Scan'}
+                  {step === 6 && '6. Review & Submit'}
+                </span>
               </div>
+              <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
+                <div
+                  className="bg-gradient-to-r from-amber-500 to-orange-500 h-full transition-all duration-300"
+                  style={{ width: `${(step / 6) * 100}%` }}
+                />
+              </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* STEP 1: Select Incident Type */}
+            {step === 1 && (
+              <div className="space-y-4 animate-in fade-in duration-200">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    Reporter Role / Category
-                  </label>
-                  <select
-                    value={reporterType}
-                    onChange={(e) => setReporterType(e.target.value as any)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-semibold"
-                  >
-                    <option value="Citizen">Local Citizen / Resident</option>
-                    <option value="Field Officer">District Field Officer (ASDMA/SDMA)</option>
-                    <option value="BRO Patrol">Border Roads Patrol Unit (BRO)</option>
-                    <option value="NDRF Scout">NDRF / SDRF Search Scout</option>
-                    <option value="Forest Guard">Forest Guard / Ranger</option>
-                    <option value="Police Patrol">Highway Police Patrol</option>
-                  </select>
+                  <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
+                    Select Incident / Hazard Type
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Choose the primary category that best describes the ground observation
+                  </p>
                 </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {INCIDENT_TYPES.map((t) => {
+                    const isSelected = incidentType === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setIncidentType(t.id)}
+                        className={`p-4 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                          isSelected
+                            ? 'bg-amber-950/60 border-amber-500 text-white shadow-lg shadow-amber-950/40 ring-1 ring-amber-500'
+                            : 'bg-eoc-surface/60 border-eoc-border text-slate-300 hover:bg-eoc-surface hover:border-slate-700'
+                        }`}
+                      >
+                        <span className="text-2xl">{t.icon}</span>
+                        <div className="space-y-1">
+                          <div className="font-bold text-xs flex items-center justify-between">
+                            <span>{t.label}</span>
+                            {isSelected && <Check className="h-4 w-4 text-amber-400" />}
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-snug">{t.desc}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: Capture / Select Location */}
+            {step === 2 && (
+              <div className="space-y-4 animate-in fade-in duration-200">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    Your Full Name
-                  </label>
+                  <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
+                    Capture Incident Location
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Use automatic GPS positioning or select from Northeast India districts
+                  </p>
+                </div>
+
+                {/* GPS Button */}
+                <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <Navigation className="h-5 w-5 text-sky-400 animate-pulse" />
+                    <div>
+                      <span className="text-xs font-bold text-white font-mono block">DEVICE GEOLOCATION (GPS)</span>
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        Lat: {latitude.toFixed(4)}° N, Lng: {longitude.toFixed(4)}° E
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLocateMe}
+                    className="px-3 py-1.5 bg-sky-950 hover:bg-sky-900 text-sky-300 text-xs font-mono font-bold rounded-lg border border-sky-800 flex items-center gap-1.5 transition-all"
+                  >
+                    <Compass className="h-3.5 w-3.5" />
+                    <span>Auto-Locate GPS</span>
+                  </button>
+                </div>
+
+                {/* State & District Pickers */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-semibold">State (Northeast India):</label>
+                    <select
+                      value={state}
+                      onChange={(e) => {
+                        const nextState = e.target.value;
+                        setState(nextState);
+                        setDistrict(NER_STATES_DISTRICTS[nextState]?.[0] || '');
+                      }}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500 font-mono"
+                    >
+                      {Object.keys(NER_STATES_DISTRICTS).map((st) => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-semibold">District:</label>
+                    <select
+                      value={district}
+                      onChange={(e) => setDistrict(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500 font-mono"
+                    >
+                      {(NER_STATES_DISTRICTS[state] || []).map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Village / Landmark */}
+                <div className="space-y-1.5 text-xs">
+                  <label className="text-slate-300 font-semibold">Village / Highway Landmark / Chainage:</label>
                   <input
                     type="text"
-                    value={reporterName}
-                    onChange={(e) => setReporterName(e.target.value)}
-                    placeholder="e.g. Tenzing Norbu"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    Mobile Contact Number
-                  </label>
-                  <input
-                    type="tel"
-                    value={contactNumber}
-                    onChange={(e) => setContactNumber(e.target.value)}
-                    placeholder="+91-98765-XXXXX"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono"
-                    required
+                    value={village}
+                    onChange={(e) => setVillage(e.target.value)}
+                    placeholder="e.g. Singtam Lower Bazaar, NH-10 29th Mile, Tupul Tunnel 12"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500 font-sans text-xs"
                   />
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Step 2: Hazard Type & Urgency */}
-            <div className="space-y-3 border-b border-eoc-border pb-5">
-              <div className="flex items-center gap-2 text-amber-400 font-bold uppercase font-mono text-xs">
-                <AlertTriangle className="h-4 w-4" />
-                <span>2. Hazard Category & Observed Severity</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* STEP 3: Add Description & Impact */}
+            {step === 3 && (
+              <div className="space-y-4 animate-in fade-in duration-200">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    Observed Hazard Type
-                  </label>
-                  <select
-                    value={hazardType}
-                    onChange={(e) => setHazardType(e.target.value as any)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold"
-                  >
-                    <option value="Landslide">Active Landslide (Mud / Debris Avalanche)</option>
-                    <option value="Crack">Tension Crack on Hill Slope / Road</option>
-                    <option value="Road Blockage">Highway Road Blockage / Sinking Zone</option>
-                    <option value="Slope Movement">Slope Creep / Retaining Wall Bulge</option>
-                    <option value="Flash Flood">Flash Flood / River Bank Scour</option>
-                    <option value="Rockfall">Rockfall / Boulder Roll</option>
-                  </select>
+                  <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
+                    Hazard Description & Vulnerability Impact
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Describe the physical event, crack dimensions, and affected transportation
+                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    Estimated Severity Level
-                  </label>
-                  <select
-                    value={severity}
-                    onChange={(e) => setSeverity(e.target.value as any)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold"
-                  >
-                    <option value="CRITICAL">CRITICAL — Imminent Threat to Life / Highway Blocked</option>
-                    <option value="HIGH">HIGH — Structural Damage / Partial Road Subsidence</option>
-                    <option value="MODERATE">MODERATE — Warning Signs / Minor Mud Spills</option>
-                    <option value="LOW">LOW — Surface Erosion / Minor Creep</option>
-                  </select>
+                <div className="space-y-1.5 text-xs">
+                  <label className="text-slate-300 font-semibold">Incident Narrative / Observation Details:</label>
+                  <textarea
+                    rows={4}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe what you witnessed (e.g. 3-inch wide tension cracks opening on retaining wall, continuous mudslide blocking both lanes, tilted trees)..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 focus:outline-none focus:border-amber-500 text-xs font-sans leading-relaxed"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                  {/* Road Blocked Toggle */}
+                  <div className="bg-eoc-surface p-3 rounded-lg border border-eoc-border flex items-center justify-between">
+                    <div>
+                      <span className="font-semibold text-white block">Highway / Roadway Blocked?</span>
+                      <span className="text-[11px] text-slate-400">Vehicle transit obstructed</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={roadBlocked}
+                      onChange={(e) => setRoadBlocked(e.target.checked)}
+                      className="h-5 w-5 accent-amber-500 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Structures at Risk */}
+                  <div className="bg-eoc-surface p-3 rounded-lg border border-eoc-border flex items-center justify-between">
+                    <div>
+                      <span className="font-semibold text-white block">Houses / Structures at Risk:</span>
+                      <span className="text-[11px] text-slate-400">Habitations near toe</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setStructuresAtRisk(Math.max(0, structuresAtRisk - 1))}
+                        className="px-2 py-1 bg-slate-800 text-white rounded font-mono font-bold"
+                      >
+                        -
+                      </button>
+                      <span className="font-mono font-bold text-amber-400 text-sm px-2">
+                        {structuresAtRisk}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setStructuresAtRisk(structuresAtRisk + 1)}
+                        className="px-2 py-1 bg-slate-800 text-white rounded font-mono font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Step 3: Location & Coordinates */}
-            <div className="space-y-3 border-b border-eoc-border pb-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sky-400 font-bold uppercase font-mono text-xs">
-                  <MapPin className="h-4 w-4" />
-                  <span>3. Geographic Location & Coordinates</span>
+            {/* STEP 4: Select Severity */}
+            {step === 4 && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
+                    Select Hazard Severity Level
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Assess the threat to life, structures, and regional connectivity
+                  </p>
                 </div>
+
+                <div className="space-y-2.5">
+                  {SEVERITY_LEVELS.map((lvl) => {
+                    const isSelected = severity === lvl.id;
+                    return (
+                      <div
+                        key={lvl.id}
+                        onClick={() => setSeverity(lvl.id)}
+                        className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+                          isSelected
+                            ? `${lvl.bg} ${lvl.border} ring-1 ring-amber-500 shadow-md`
+                            : 'bg-eoc-surface/60 border-eoc-border hover:bg-eoc-surface'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg bg-slate-950 border border-slate-800 ${lvl.color}`}>
+                            {lvl.id === 'CRITICAL' ? <Flame className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                          </div>
+                          <div>
+                            <span className={`font-mono font-bold text-xs ${lvl.color} block`}>
+                              {lvl.label}
+                            </span>
+                            <span className="text-[11px] text-slate-300">{lvl.desc}</span>
+                          </div>
+                        </div>
+                        {isSelected && <Check className="h-4 w-4 text-amber-400 shrink-0" />}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* STEP 5: Photo / Video & AI Computer Vision Scan */}
+            {step === 5 && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
+                    Attach Photo / Video & Run AI Computer Vision Diagnostic
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Upload image or pick from test samples to trigger neural network hazard analysis
+                  </p>
+                </div>
+
+                {/* Sample Photo Pickers for testing */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] text-slate-400 uppercase font-mono block">
+                    Choose Disaster Test Photo (Simulated Ground Capture):
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {SAMPLE_DISASTER_PHOTOS.map((sp) => {
+                      const isSelected = photoUrl === sp.url;
+                      return (
+                        <div
+                          key={sp.id}
+                          onClick={() => {
+                            setPhotoUrl(sp.url);
+                            handleRunAiVisionScan(sp.url);
+                          }}
+                          className={`cursor-pointer rounded-lg border overflow-hidden transition-all text-left ${
+                            isSelected
+                              ? 'border-amber-500 ring-2 ring-amber-500/50'
+                              : 'border-slate-800 hover:border-slate-600'
+                          }`}
+                        >
+                          <img src={sp.url} alt={sp.name} className="h-20 w-full object-cover" />
+                          <div className="p-2 bg-slate-950 text-[10px] space-y-0.5">
+                            <span className="font-bold text-white font-mono block truncate">{sp.name}</span>
+                            <span className="text-slate-400 block text-[9px] truncate">{sp.incidentType}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* AI Vision Scan Action */}
+                <div className="flex items-center justify-between bg-slate-900 p-3 rounded-lg border border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-purple-400" />
+                    <span className="text-xs font-bold text-white font-mono">
+                      AI Computer Vision Damage Classifier
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRunAiVisionScan()}
+                    disabled={isAnalyzingVision}
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-mono font-bold rounded-lg flex items-center gap-1.5 transition-all"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isAnalyzingVision ? 'animate-spin' : ''}`} />
+                    <span>{isAnalyzingVision ? 'Scanning Image...' : 'Run Vision Scan'}</span>
+                  </button>
+                </div>
+
+                {/* AI Computer Vision Scan Result Display */}
+                {visionResult && (
+                  <div className="bg-gradient-to-br from-purple-950/40 via-slate-950 to-purple-950/20 border border-purple-800/80 rounded-xl p-4 shadow-xl space-y-3 animate-in fade-in duration-300">
+                    <div className="flex items-center justify-between border-b border-purple-900/50 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono bg-purple-900 text-purple-300 px-2 py-0.5 rounded uppercase font-bold">
+                          AI VISION RESULT
+                        </span>
+                        <span className="text-xs font-bold text-white font-mono">
+                          {visionResult.detectedIssue}
+                        </span>
+                      </div>
+                      <span className="text-xs font-mono text-purple-300 font-bold">
+                        Confidence: {(visionResult.confidence * 100).toFixed(0)}%
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div className="space-y-1">
+                        <span className="text-[10px] text-slate-400 font-mono block">DETECTED OBSERVATIONS:</span>
+                        <p className="text-[11px] text-slate-200 leading-relaxed font-sans">
+                          {visionResult.observations}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] text-slate-400 font-mono block">GEOTECHNICAL TAGS:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {visionResult.geotechnicalTags.map((tag, idx) => (
+                            <span
+                              key={idx}
+                              className="text-[10px] bg-slate-900 text-sky-300 px-2 py-0.5 rounded border border-slate-800 font-mono"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] text-slate-400 border-t border-purple-950 pt-2 flex items-center justify-between font-mono">
+                      <span>Severity Assessment: <b className="text-red-400">{visionResult.severity}</b></span>
+                      <span>{new Date(visionResult.processedAt).toLocaleTimeString()}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* STEP 6: Reporter Contact & Review */}
+            {step === 6 && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
+                    Reporter Contact & Final Review
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Verify all submission parameters before broadcasting to the disaster operations network
+                  </p>
+                </div>
+
+                {/* Reporter Profile */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-semibold">Reporter Role:</label>
+                    <select
+                      value={reporterType}
+                      onChange={(e) => setReporterType(e.target.value as ReporterType)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 font-mono text-xs focus:outline-none"
+                    >
+                      <option value="Citizen">Citizen</option>
+                      <option value="Field Officer">Field Officer</option>
+                      <option value="NDRF Scout">NDRF Scout</option>
+                      <option value="BRO Patrol">BRO Patrol</option>
+                      <option value="Forest Guard">Forest Guard</option>
+                      <option value="Police Patrol">Police Patrol</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-semibold">Your Name:</label>
+                    <input
+                      type="text"
+                      value={reporterName}
+                      onChange={(e) => setReporterName(e.target.value)}
+                      placeholder="e.g. Tashi Bhutia"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-semibold">Contact Phone (for EOC callback):</label>
+                    <input
+                      type="text"
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      placeholder="+91 98451 XXXXX"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 font-mono text-xs focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Review Card */}
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2.5 text-xs font-mono">
+                  <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block">
+                    SUBMISSION SUMMARY INSPECTOR:
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                    <div>
+                      <span className="text-slate-500 block">TYPE:</span>
+                      <span className="text-white font-bold">{incidentType}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">SEVERITY:</span>
+                      <span className="text-red-400 font-bold">{severity}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">LOCATION:</span>
+                      <span className="text-slate-200 truncate block">{village}, {district}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">ROADWAY:</span>
+                      <span className={roadBlocked ? 'text-red-400' : 'text-emerald-400'}>
+                        {roadBlocked ? 'Blocked' : 'Clear'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center justify-between pt-4 border-t border-eoc-border">
+              {step > 1 ? (
                 <button
                   type="button"
-                  onClick={handleUseCurrentLocation}
-                  className="text-[11px] font-mono bg-sky-950 text-sky-300 border border-sky-800 px-2.5 py-1 rounded flex items-center gap-1 hover:bg-sky-900 transition-colors"
+                  onClick={() => setStep(step - 1)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all"
                 >
-                  <Navigation className="h-3 w-3" />
-                  <span>Get My GPS Coordinates</span>
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  <span>Previous Step</span>
                 </button>
-              </div>
+              ) : (
+                <div />
+              )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">State</label>
-                  <select
-                    value={state}
-                    onChange={(e) => setState(e.target.value as any)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-semibold"
-                  >
-                    <option value="Sikkim">Sikkim</option>
-                    <option value="Assam">Assam</option>
-                    <option value="Meghalaya">Meghalaya</option>
-                    <option value="Nagaland">Nagaland</option>
-                    <option value="Manipur">Manipur</option>
-                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                    <option value="Mizoram">Mizoram</option>
-                    <option value="Tripura">Tripura</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">District</label>
-                  <input
-                    type="text"
-                    value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    placeholder="e.g. Pakyong, East Khasi Hills, Dima Hasao"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">
-                  Specific Landmark, Highway Milestone or Village Name
-                </label>
-                <input
-                  type="text"
-                  value={landmark}
-                  onChange={(e) => setLandmark(e.target.value)}
-                  placeholder="e.g. NH-10 29th Mile, near Setipool Petrol Pump"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 font-mono">
-                <div>
-                  <label className="block text-slate-400 text-[10px] mb-1">LATITUDE (°N)</label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    value={lat}
-                    onChange={(e) => setLat(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-400 text-[10px] mb-1">LONGITUDE (°E)</label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    value={lng}
-                    onChange={(e) => setLng(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs"
-                    required
-                  />
-                </div>
-              </div>
+              {step < 6 ? (
+                <button
+                  type="button"
+                  onClick={() => setStep(step + 1)}
+                  className="px-5 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-mono text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-md shadow-amber-950 transition-all active:scale-95"
+                >
+                  <span>Next Step</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleFinalSubmit}
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-mono text-xs font-black rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-950 transition-all active:scale-95"
+                >
+                  <Send className={`h-4 w-4 ${isSubmitting ? 'animate-spin' : ''}`} />
+                  <span>{isSubmitting ? 'Transmitting to EOC...' : 'Submit Field Report'}</span>
+                </button>
+              )}
             </div>
-
-            {/* Step 4: Description & Media Upload */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-purple-400 font-bold uppercase font-mono text-xs">
-                <Camera className="h-4 w-4" />
-                <span>4. Incident Description & Visual Evidence</span>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">
-                  Detailed Field Observations
-                </label>
-                <textarea
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe slope movement, size of debris slide, tension crack length/width, water seepage, or damage to buildings..."
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div className="bg-slate-900 p-3 rounded-lg border border-dashed border-slate-700 text-center space-y-1">
-                  <Camera className="h-5 w-5 text-sky-400 mx-auto" />
-                  <span className="text-slate-300 font-semibold block">Attach Landslide Photo</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setPhotoName(e.target.files?.[0]?.name || null)}
-                    className="text-[10px] text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:bg-slate-800 file:text-slate-200"
-                  />
-                  {photoName && <span className="text-[10px] text-emerald-400 block">✓ {photoName}</span>}
-                </div>
-
-                <div className="bg-slate-900 p-3 rounded-lg border border-dashed border-slate-700 text-center space-y-1">
-                  <Video className="h-5 w-5 text-purple-400 mx-auto" />
-                  <span className="text-slate-300 font-semibold block">Attach Video Clip</span>
-                  <input
-                    type="file"
-                    accept="video/*"
-                    onChange={(e) => setVideoName(e.target.files?.[0]?.name || null)}
-                    className="text-[10px] text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:bg-slate-800 file:text-slate-200"
-                  />
-                  {videoName && <span className="text-[10px] text-emerald-400 block">✓ {videoName}</span>}
-                </div>
-              </div>
-            </div>
-
-            {/* Submission Action */}
-            <div className="pt-4 border-t border-eoc-border flex items-center justify-between">
-              <span className="text-[10px] text-slate-400">
-                🔒 Data encrypted and routed to State EOC Command Center
-              </span>
-              <button
-                type="submit"
-                className="px-8 py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-extrabold rounded-xl text-sm flex items-center gap-2 shadow-xl shadow-amber-950 transition-all active:scale-95"
-              >
-                <Send className="h-4 w-4" />
-                <span>Transmit Field Report Now</span>
-              </button>
-            </div>
-          </form>
+          </div>
         )}
       </div>
     </MainLayout>

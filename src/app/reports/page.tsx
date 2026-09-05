@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useEOC } from '@/context/EOCContext';
-import { FieldReport, RiskLevel } from '@/types';
+import { useFieldReports, FieldReportRecord, ReportStatus, ReportIncidentType } from '@/services/reporting';
 import { SeverityBadge } from '@/components/common/SeverityBadge';
 import { 
   FileSpreadsheet, 
@@ -17,265 +16,434 @@ import {
   Phone, 
   Camera, 
   AlertTriangle, 
-  Plus,
-  ArrowRight,
-  ShieldCheck,
-  Send
+  Plus, 
+  ArrowRight, 
+  ShieldCheck, 
+  Send,
+  X,
+  Sparkles,
+  Flame,
+  Check,
+  Eye,
+  Wrench,
+  ChevronRight,
+  ShieldAlert
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ReportsPage() {
-  const { fieldReports, verifyFieldReport } = useEOC();
-  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [selectedReport, setSelectedReport] = useState<FieldReport | null>(null);
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedReport, setSelectedReport] = useState<FieldReportRecord | null>(null);
+  const [adminNoteInput, setAdminNoteInput] = useState('');
 
-  const filteredReports = fieldReports.filter((rep) => {
+  const { reports, isLoading, updateReportStatus } = useFieldReports(statusFilter, typeFilter);
+
+  const filteredReports = reports.filter((rep) => {
     const matchesSearch =
       rep.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rep.landmark.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rep.village.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rep.district.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rep.reporterName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || rep.verificationStatus === statusFilter;
-    return matchesSearch && matchesStatus;
+      rep.reporterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rep.description.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
   });
 
-  const handleVerify = (id: string, isVerified: boolean) => {
-    verifyFieldReport(id, isVerified ? 'Verified' : 'Dismissed');
+  const handleStatusChange = async (id: string, newStatus: ReportStatus) => {
+    await updateReportStatus(id, newStatus, adminNoteInput);
     if (selectedReport?.id === id) {
-      setSelectedReport((prev) =>
-        prev ? { ...prev, verificationStatus: isVerified ? 'Verified' : 'Dismissed' } : null
-      );
+      setSelectedReport((prev) => (prev ? { ...prev, status: newStatus } : null));
+    }
+  };
+
+  const getStatusBadge = (status: ReportStatus) => {
+    switch (status) {
+      case 'NEW':
+        return (
+          <span className="bg-sky-950 text-sky-300 border border-sky-700 px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-ping" />
+            NEW SUBMISSION
+          </span>
+        );
+      case 'VERIFIED':
+        return (
+          <span className="bg-emerald-950 text-emerald-300 border border-emerald-700 px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase flex items-center gap-1">
+            <ShieldCheck className="h-3 w-3" />
+            VERIFIED
+          </span>
+        );
+      case 'INVESTIGATING':
+        return (
+          <span className="bg-amber-950 text-amber-300 border border-amber-700 px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            INVESTIGATING
+          </span>
+        );
+      case 'RESOLVED':
+        return (
+          <span className="bg-slate-800 text-slate-300 border border-slate-700 px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3 text-slate-400" />
+            RESOLVED
+          </span>
+        );
+      case 'REJECTED':
+        return (
+          <span className="bg-rose-950 text-rose-300 border border-rose-800 px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase flex items-center gap-1">
+            <XCircle className="h-3 w-3 text-rose-400" />
+            REJECTED
+          </span>
+        );
     }
   };
 
   return (
     <MainLayout>
-      <div className="space-y-5">
-        {/* Header */}
-        <div className="bg-eoc-card p-4 rounded-xl border border-eoc-border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-amber-950 text-amber-400 border border-amber-800">
-              <FileSpreadsheet className="h-5 w-5" />
+      <div className="space-y-6">
+        {/* Operations Header */}
+        <div className="bg-eoc-card p-4 md:p-5 rounded-xl border border-eoc-border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-amber-950/80 text-amber-400 border border-amber-800/80 shadow-inner">
+              <FileSpreadsheet className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-base md:text-lg font-black text-white font-mono tracking-wide">
-                CITIZEN & FIELD OFFICER REPORT VERIFICATION QUEUE
-              </h1>
-              <p className="text-xs text-slate-400">
-                Crowdsourced landslide reports, road cracks & community disaster submissions
+              <div className="flex items-center gap-2">
+                <h1 className="text-base md:text-lg font-black text-white font-mono tracking-wide">
+                  FIELD REPORT MODERATION & VERIFICATION QUEUE
+                </h1>
+                <span className="bg-amber-900/40 text-amber-300 text-[10px] font-mono px-2 py-0.5 rounded border border-amber-700/50">
+                  {reports.length} Reports Logged
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Manage crowdsourced citizen observations, AI computer vision damage findings, and quick response dispatches
               </p>
             </div>
           </div>
+
           <Link
             href="/field-report"
-            className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-md shadow-amber-950 transition-all self-start md:self-auto"
+            className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-mono text-xs font-bold rounded-lg flex items-center gap-2 shadow-md shadow-amber-950 transition-all self-start md:self-auto active:scale-95"
           >
             <Send className="h-3.5 w-3.5" />
             <span>+ New Field Submission</span>
           </Link>
         </div>
 
-        {/* Filter and Search Bar */}
+        {/* Filters and Search Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 bg-eoc-card p-3.5 rounded-xl border border-eoc-border text-xs">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search reporter, landmark, district..."
+              placeholder="Search Incident ID, location, reporter..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-sky-500"
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 font-mono"
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Status filter tabs */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-mono text-slate-400 uppercase mr-1">Status:</span>
+            {['ALL', 'NEW', 'VERIFIED', 'INVESTIGATING', 'RESOLVED', 'REJECTED'].map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`px-2.5 py-1 rounded text-[10px] font-mono transition-all ${
+                  statusFilter === st
+                    ? 'bg-amber-600 text-white font-bold shadow-md shadow-amber-950'
+                    : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                }`}
+              >
+                {st}
+              </button>
+            ))}
+          </div>
+
+          {/* Type filter dropdown */}
+          <div className="flex items-center gap-1.5">
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none cursor-pointer"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 font-mono focus:outline-none"
             >
-              <option value="ALL">All Verification Statuses</option>
-              <option value="Pending Verification">Pending Verification (New)</option>
-              <option value="Verified">Verified (Elevated to Incident)</option>
-              <option value="Dismissed">Dismissed</option>
+              <option value="ALL">All Hazard Types</option>
+              <option value="Landslide">Landslide</option>
+              <option value="Road Blockage">Road Blockage</option>
+              <option value="Crack">Crack</option>
+              <option value="Slope Movement">Slope Movement</option>
+              <option value="Flood">Flood</option>
             </select>
           </div>
         </div>
 
-        {/* Reports Feed Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredReports.map((report) => {
-            const isPending = report.verificationStatus === 'Pending Verification';
-            const isVerified = report.verificationStatus === 'Verified';
+        {/* Report Moderation Table */}
+        <div className="bg-eoc-card border border-eoc-border rounded-xl shadow-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-900/90 text-slate-400 uppercase font-mono text-[10px] border-b border-slate-800">
+                <tr>
+                  <th className="p-3.5">Incident ID</th>
+                  <th className="p-3.5">Type</th>
+                  <th className="p-3.5">Location</th>
+                  <th className="p-3.5">Severity</th>
+                  <th className="p-3.5">Reporter</th>
+                  <th className="p-3.5">Time</th>
+                  <th className="p-3.5">Status</th>
+                  <th className="p-3.5 text-right">Moderation</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 font-mono">
+                {filteredReports.map((rep) => {
+                  const isSelected = selectedReport?.id === rep.id;
 
-            return (
-              <div
-                key={report.id}
-                onClick={() => setSelectedReport(report)}
-                className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
-                  isPending
-                    ? 'bg-amber-950/20 border-amber-800/80 shadow-md shadow-amber-950/30'
-                    : isVerified
-                    ? 'bg-eoc-card border-slate-700 hover:border-slate-500'
-                    : 'bg-slate-900/40 border-slate-800 opacity-70'
-                }`}
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-[10px] font-mono font-bold text-sky-400 bg-sky-950 px-2 py-0.5 rounded border border-sky-800">
-                      {report.id}
-                    </span>
-                    <span
-                      className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase border ${
-                        isPending
-                          ? 'bg-amber-900 text-amber-200 border-amber-700 animate-pulse'
-                          : isVerified
-                          ? 'bg-emerald-900 text-emerald-200 border-emerald-700'
-                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                  return (
+                    <tr
+                      key={rep.id}
+                      onClick={() => setSelectedReport(rep)}
+                      className={`cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-amber-950/40 border-l-4 border-l-amber-400'
+                          : rep.status === 'NEW'
+                          ? 'bg-sky-950/15 hover:bg-sky-950/30'
+                          : rep.severity === 'CRITICAL'
+                          ? 'bg-red-950/10 hover:bg-red-950/25'
+                          : 'hover:bg-slate-900/50'
                       }`}
                     >
-                      {report.verificationStatus}
-                    </span>
-                  </div>
+                      {/* Incident ID */}
+                      <td className="p-3.5">
+                        <span className="font-bold text-sky-400 font-mono">{rep.id}</span>
+                        {rep.photoUrl && (
+                          <span className="text-[10px] text-slate-500 ml-1.5">📷 Photo</span>
+                        )}
+                      </td>
 
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <SeverityBadge level={report.severity} size="sm" />
-                      <span className="text-xs font-bold text-white">
-                        {report.hazardType}
-                      </span>
-                    </div>
-                    <h3 className="text-xs font-bold text-slate-100 line-clamp-1">
-                      {report.landmark}
-                    </h3>
-                    <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                      <MapPin className="h-3 w-3 text-slate-500 shrink-0" />
-                      <span>{report.district}, {report.state}</span>
-                    </div>
-                  </div>
+                      {/* Type */}
+                      <td className="p-3.5 font-sans font-semibold text-white">
+                        {rep.incidentType}
+                      </td>
 
-                  <p className="text-xs text-slate-300 line-clamp-3 bg-slate-900/80 p-2.5 rounded border border-slate-800">
-                    {report.description}
+                      {/* Location */}
+                      <td className="p-3.5">
+                        <div className="font-sans font-semibold text-slate-200 truncate max-w-[200px]">
+                          {rep.village}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-sans flex items-center gap-1">
+                          <MapPin className="h-2.5 w-2.5 text-sky-400" />
+                          {rep.district}, {rep.state}
+                        </div>
+                      </td>
+
+                      {/* Severity */}
+                      <td className="p-3.5 font-sans">
+                        <SeverityBadge level={rep.severity} size="sm" pulse={rep.severity === 'CRITICAL'} />
+                      </td>
+
+                      {/* Reporter */}
+                      <td className="p-3.5">
+                        <div className="font-sans text-slate-200 font-medium">{rep.reporterName}</div>
+                        <div className="text-[10px] text-amber-400 font-mono">
+                          [{rep.reporterType}]
+                        </div>
+                      </td>
+
+                      {/* Time */}
+                      <td className="p-3.5 text-slate-400 text-[11px]">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3 text-slate-500" />
+                          {new Date(rep.timestamp).toLocaleTimeString()}
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td className="p-3.5">
+                        {getStatusBadge(rep.status)}
+                      </td>
+
+                      {/* Action */}
+                      <td className="p-3.5 text-right">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedReport(rep);
+                          }}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-amber-900 text-amber-300 rounded text-[10px] font-sans font-semibold inline-flex items-center gap-1 transition-all"
+                        >
+                          <span>Review</span>
+                          <ChevronRight className="h-3 w-3" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Selected Report Inspection Drawer / Moderation Panel */}
+        {selectedReport && (
+          <div className="bg-gradient-to-br from-slate-900 via-eoc-card to-slate-950 border border-amber-900/60 rounded-xl p-5 shadow-2xl space-y-4 animate-in fade-in duration-200">
+            {/* Top Bar */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white font-mono">
+                  MODERATION INSPECTOR — {selectedReport.id}
+                </span>
+                {getStatusBadge(selectedReport.status)}
+              </div>
+              <button
+                onClick={() => setSelectedReport(null)}
+                className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Grid: Details (7 cols) vs Media & AI Vision (5 cols) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              {/* Report Information (7 cols) */}
+              <div className="lg:col-span-7 space-y-3.5 text-xs font-sans">
+                {/* Location & Coordinates */}
+                <div className="bg-eoc-surface p-3.5 rounded-lg border border-eoc-border space-y-1 font-mono">
+                  <span className="text-[10px] text-slate-400 uppercase block font-semibold">Incident Location:</span>
+                  <div className="text-sm font-bold text-white font-sans">
+                    {selectedReport.village}, {selectedReport.district} ({selectedReport.state})
+                  </div>
+                  <div className="text-[11px] text-sky-400">
+                    Coordinates: {selectedReport.latitude.toFixed(4)}° N, {selectedReport.longitude.toFixed(4)}° E
+                  </div>
+                </div>
+
+                {/* Narrative Description */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase block font-semibold">
+                    Observer Narrative:
+                  </span>
+                  <p className="bg-slate-900/80 p-3 rounded-lg border border-slate-800 text-slate-200 leading-relaxed text-xs">
+                    {selectedReport.description}
                   </p>
                 </div>
 
-                <div className="pt-3 mt-3 border-t border-slate-800/80 space-y-2 text-[11px]">
-                  <div className="flex items-center justify-between text-slate-400 font-mono text-[10px]">
-                    <span className="flex items-center gap-1">
-                      <User className="h-3 w-3 text-sky-400" />
-                      {report.reporterName} ({report.reporterType})
+                {/* Impact Metrics */}
+                <div className="grid grid-cols-3 gap-2 font-mono text-center">
+                  <div className="bg-slate-900 p-2.5 rounded border border-slate-800">
+                    <span className="text-slate-500 text-[10px] block">ROADWAY</span>
+                    <span className={`font-bold ${selectedReport.roadBlocked ? 'text-red-400' : 'text-emerald-400'}`}>
+                      {selectedReport.roadBlocked ? 'BLOCKED' : 'CLEAR'}
                     </span>
-                    <span>{report.reportedAt}</span>
                   </div>
-
-                  {isPending && (
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleVerify(report.id, true);
-                        }}
-                        className="flex-1 bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-1.5 rounded text-xs flex items-center justify-center gap-1 transition-colors"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        <span>Verify & Elevate</span>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleVerify(report.id, false);
-                        }}
-                        className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-1.5 rounded text-xs"
-                      >
-                        Dismiss
-                      </button>
-                    </div>
-                  )}
+                  <div className="bg-slate-900 p-2.5 rounded border border-slate-800">
+                    <span className="text-slate-500 text-[10px] block">STRUCTURES</span>
+                    <span className="font-bold text-amber-400">
+                      {selectedReport.structuresAtRisk || 0} at Risk
+                    </span>
+                  </div>
+                  <div className="bg-slate-900 p-2.5 rounded border border-slate-800">
+                    <span className="text-slate-500 text-[10px] block">REPORTER</span>
+                    <span className="font-bold text-purple-300">
+                      {selectedReport.reporterType}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
 
-        {/* Selected Report Inspection Modal */}
-        {selectedReport && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-eoc-card border border-eoc-border rounded-xl shadow-2xl max-w-lg w-full p-5 space-y-4">
-              <div className="flex items-center justify-between border-b border-eoc-border pb-3">
-                <div className="flex items-center gap-2">
-                  <SeverityBadge level={selectedReport.severity} size="md" />
-                  <span className="font-mono text-xs font-bold text-sky-400">
-                    {selectedReport.id}
+                {/* Status Moderation Controls */}
+                <div className="space-y-2 pt-2 border-t border-slate-800">
+                  <span className="text-[10px] font-mono text-amber-400 font-bold uppercase tracking-wider block">
+                    MODERATION ACTIONS & WORKFLOW TRANSITIONS:
                   </span>
-                </div>
-                <button
-                  onClick={() => setSelectedReport(null)}
-                  className="text-slate-400 hover:text-white p-1 rounded"
-                >
-                  ✕
-                </button>
-              </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => handleStatusChange(selectedReport.id, 'VERIFIED')}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-md"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      <span>Mark Verified</span>
+                    </button>
 
-              <div className="space-y-3 text-xs">
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    {selectedReport.landmark}
-                  </h3>
-                  <div className="text-slate-400 font-mono text-[11px] mt-0.5">
-                    {selectedReport.district}, {selectedReport.state} • GPS: {selectedReport.lat.toFixed(4)}°N, {selectedReport.lng.toFixed(4)}°E
+                    <button
+                      onClick={() => handleStatusChange(selectedReport.id, 'INVESTIGATING')}
+                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-md"
+                    >
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>Dispatch Investigation (QRT)</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleStatusChange(selectedReport.id, 'RESOLVED')}
+                      className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-mono text-xs font-bold flex items-center gap-1.5 transition-all"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                      <span>Mark Resolved</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleStatusChange(selectedReport.id, 'REJECTED')}
+                      className="px-3 py-1.5 bg-rose-950 hover:bg-rose-900 text-rose-300 rounded-lg font-mono text-xs font-bold border border-rose-800 flex items-center gap-1.5 transition-all"
+                    >
+                      <XCircle className="h-3.5 w-3.5 text-rose-400" />
+                      <span>Reject (Spam/Invalid)</span>
+                    </button>
                   </div>
                 </div>
+              </div>
 
-                <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-1">
-                  <span className="text-[10px] text-slate-400 font-mono uppercase block">Ground Observation Notes:</span>
-                  <p className="text-slate-200">{selectedReport.description}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  <div className="bg-eoc-surface p-2.5 rounded border border-eoc-border">
-                    <span className="text-slate-400 block font-sans">Reporter Details:</span>
-                    <b className="text-white">{selectedReport.reporterName}</b>
-                    <div className="text-sky-400 font-mono text-[10px] mt-0.5">
-                      {selectedReport.reporterType} • {selectedReport.contactNumber}
+              {/* Media & AI Computer Vision Diagnostic (5 cols) */}
+              <div className="lg:col-span-5 space-y-3">
+                {selectedReport.photoUrl ? (
+                  <div className="space-y-2">
+                    <span className="text-[10px] text-slate-400 font-mono uppercase block font-semibold">
+                      Attached Field Capture:
+                    </span>
+                    <div className="rounded-xl overflow-hidden border border-slate-800 shadow-md">
+                      <img
+                        src={selectedReport.photoUrl}
+                        alt="Hazard Capture"
+                        className="w-full h-44 object-cover"
+                      />
                     </div>
                   </div>
-
-                  <div className="bg-eoc-surface p-2.5 rounded border border-eoc-border">
-                    <span className="text-slate-400 block font-sans">Verification Status:</span>
-                    <b className="text-amber-400">{selectedReport.verificationStatus}</b>
-                    {selectedReport.assignedOfficer && (
-                      <div className="text-slate-300 text-[10px] mt-0.5">
-                        Officer: {selectedReport.assignedOfficer}
-                      </div>
-                    )}
+                ) : (
+                  <div className="h-32 bg-slate-900/60 rounded-xl border border-slate-800 flex items-center justify-center text-slate-500 text-xs font-mono">
+                    No Photo Attached
                   </div>
-                </div>
-              </div>
+                )}
 
-              <div className="pt-2 flex justify-between items-center border-t border-slate-800">
-                <button
-                  onClick={() => setSelectedReport(null)}
-                  className="px-4 py-1.5 bg-slate-800 text-slate-300 rounded hover:bg-slate-700 text-xs font-semibold"
-                >
-                  Close
-                </button>
+                {/* AI Computer Vision Damage Card */}
+                {selectedReport.aiVisionAnalysis && (
+                  <div className="bg-purple-950/40 border border-purple-800/80 rounded-xl p-3.5 space-y-2 text-xs">
+                    <div className="flex items-center justify-between border-b border-purple-900/60 pb-1.5">
+                      <div className="flex items-center gap-1.5 text-purple-300 font-mono font-bold text-[11px]">
+                        <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                        <span>AI VISION DIAGNOSTIC</span>
+                      </div>
+                      <span className="text-[11px] font-mono text-purple-300 font-bold">
+                        {(selectedReport.aiVisionAnalysis.confidence * 100).toFixed(0)}% Conf
+                      </span>
+                    </div>
 
-                {selectedReport.verificationStatus === 'Pending Verification' && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleVerify(selectedReport.id, false)}
-                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-semibold"
-                    >
-                      Dismiss Report
-                    </button>
-                    <button
-                      onClick={() => handleVerify(selectedReport.id, true)}
-                      className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold flex items-center gap-1"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span>Verify & Elevate</span>
-                    </button>
+                    <div className="space-y-1">
+                      <span className="font-bold text-white block">
+                        {selectedReport.aiVisionAnalysis.detectedIssue}
+                      </span>
+                      <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
+                        {selectedReport.aiVisionAnalysis.observations}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {selectedReport.aiVisionAnalysis.geotechnicalTags.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="text-[9px] bg-slate-900 text-sky-300 px-2 py-0.5 rounded border border-slate-800 font-mono"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
