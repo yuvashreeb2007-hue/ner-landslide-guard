@@ -4,6 +4,16 @@
 .pnp.js
 .yarn/install-state.gz
 
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+backend/app/ml/*.joblib
+backend/app/ml/data/
+
 # testing
 /coverage
 
