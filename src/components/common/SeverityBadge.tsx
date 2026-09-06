@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
 import { RiskLevel } from '@/types';
+import { useI18n } from '@/context/I18nContext';
 
 interface SeverityBadgeProps {
   level: RiskLevel | 'RED' | 'ORANGE' | 'YELLOW' | 'GREEN' | string;
@@ -14,7 +17,8 @@ export function SeverityBadge({
   showDot = true,
   pulse = false,
 }: SeverityBadgeProps) {
-  const norm = level.toUpperCase();
+  const { getLocalizedSeverity } = useI18n();
+  const norm = level?.toUpperCase() || 'INFO';
 
   let bgClasses = 'bg-slate-800 text-slate-300 border-slate-700';
   let dotClasses = 'bg-slate-400';
@@ -45,9 +49,11 @@ export function SeverityBadge({
     lg: 'text-sm px-3 py-1 rounded-md font-bold tracking-wider',
   }[size];
 
+  const localizedText = getLocalizedSeverity(norm);
+
   return (
     <span
-      className={`inline-flex items-center gap-1.5 border uppercase ${bgClasses} ${sizeClasses} ${pulseClass}`}
+      className={`inline-flex items-center gap-1.5 border uppercase font-mono ${bgClasses} ${sizeClasses} ${pulseClass}`}
     >
       {showDot && (
         <span
@@ -56,7 +62,7 @@ export function SeverityBadge({
           }`}
         />
       )}
-      {norm}
+      {localizedText}
     </span>
   );
 }

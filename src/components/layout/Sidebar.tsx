@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEOC } from '@/context/EOCContext';
+import { useI18n } from '@/context/I18nContext';
 import {
   LayoutDashboard,
   Map as MapIcon,
@@ -28,6 +29,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const { eocStats, alerts, incidents, fieldReports } = useEOC();
+  const { t } = useI18n();
 
   const activeAlertsCount = alerts.filter(a => a.status === 'Active').length;
   const activeIncidentsCount = incidents.filter(i => i.status === 'Active').length;
@@ -35,95 +37,95 @@ export function Sidebar() {
 
   const navItems = [
     {
-      label: 'Overview',
+      label: t('nav.overview'),
       href: '/',
       icon: LayoutDashboard,
       badge: null,
     },
     {
-      label: 'Live Risk Map',
+      label: t('nav.map'),
       href: '/map',
       icon: MapIcon,
-      badge: `${eocStats.activeCriticalZones} Critical`,
+      badge: `${eocStats.activeCriticalZones} ${t('risk.levels.CRITICAL')}`,
       badgeColor: 'bg-red-950 text-red-400 border-red-800',
     },
     {
-      label: 'Risk Predictions',
+      label: t('nav.predictions'),
       href: '/predictions',
       icon: Cpu,
-      badge: 'AI Active',
+      badge: t('nav.aiActive'),
       badgeColor: 'bg-purple-950 text-purple-300 border-purple-800',
     },
     {
-      label: 'Rainfall & Weather',
+      label: t('nav.weather'),
       href: '/weather',
       icon: CloudRain,
-      badge: 'IMD Live',
+      badge: t('nav.imdLive'),
       badgeColor: 'bg-sky-950 text-sky-300 border-sky-800',
     },
     {
-      label: 'Soil & Sensors',
+      label: t('nav.sensors'),
       href: '/sensors',
       icon: ActivitySquare,
       badge: `${eocStats.sensorsOnline}/${eocStats.totalSensors}`,
       badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800',
     },
     {
-      label: 'Landslide Reports',
+      label: t('nav.reports'),
       href: '/reports',
       icon: FileSpreadsheet,
-      badge: pendingReportsCount > 0 ? `${pendingReportsCount} New` : null,
+      badge: pendingReportsCount > 0 ? `${pendingReportsCount} ${t('common.pending')}` : null,
       badgeColor: 'bg-amber-950 text-amber-300 border-amber-800',
     },
     {
-      label: 'Submit Field Report',
+      label: t('nav.fieldReport'),
       href: '/field-report',
       icon: Send,
-      badge: 'Citizen/SDRF',
+      badge: t('nav.citizenSdrf'),
       badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800',
     },
     {
-      label: 'Offline Sync Queue',
+      label: t('nav.offlineQueue'),
       href: '/offline-queue',
       icon: PhoneCall,
-      badge: 'PWA Sync',
+      badge: t('nav.pwaSync'),
       badgeColor: 'bg-sky-950 text-sky-300 border-sky-800',
     },
     {
-      label: 'Roads & Connectivity',
+      label: t('nav.roads'),
       href: '/roads',
       icon: GitFork,
-      badge: `${eocStats.roadsBlocked} Blocked`,
+      badge: `${eocStats.roadsBlocked} ${t('kpi.roadsBlocked')}`,
       badgeColor: 'bg-orange-950 text-orange-400 border-orange-800',
     },
     {
-      label: 'Alerts & Broadcast',
+      label: t('nav.alerts'),
       href: '/alerts',
       icon: AlertOctagon,
       badge: activeAlertsCount > 0 ? `${activeAlertsCount}` : null,
       badgeColor: 'bg-red-900 text-white font-bold',
     },
     {
-      label: 'Emergency Response',
+      label: t('nav.emergency'),
       href: '/emergency',
       icon: LifeBuoy,
-      badge: `${eocStats.activeResponseTeams} Teams`,
+      badge: `${eocStats.activeResponseTeams}`,
       badgeColor: 'bg-blue-950 text-blue-300 border-blue-800',
     },
     {
-      label: 'Analytics',
+      label: t('nav.analytics'),
       href: '/analytics',
       icon: BarChart3,
       badge: null,
     },
     {
-      label: 'Administration',
+      label: t('nav.admin'),
       href: '/admin',
       icon: ShieldCheck,
       badge: null,
     },
     {
-      label: 'Settings',
+      label: t('nav.settings'),
       href: '/settings',
       icon: SettingsIcon,
       badge: null,
@@ -149,7 +151,7 @@ export function Sidebar() {
                   LANDSLIDEGUARD
                 </span>
                 <span className="text-[10px] text-sky-400 font-semibold truncate uppercase">
-                  NER India EOC Node
+                  {t('common.nodeTitle')}
                 </span>
               </div>
             )}
@@ -175,7 +177,7 @@ export function Sidebar() {
             title="Submit Citizen / Field Landslide Report"
           >
             <Send className="h-3.5 w-3.5" />
-            {!collapsed && <span>+ Submit Field Report</span>}
+            {!collapsed && <span>{t('nav.submitReportBtn')}</span>}
           </Link>
         </div>
 
@@ -226,14 +228,14 @@ export function Sidebar() {
           <div className="space-y-1.5 text-[11px]">
             <div className="flex items-center gap-1.5 text-amber-400 font-bold font-mono">
               <PhoneCall className="h-3.5 w-3.5" />
-              <span>DISASTER HELPLINE: 1077</span>
+              <span>{t('common.helpline')}</span>
             </div>
             <div className="text-[10px] text-slate-400">
-              ASDMA / SSDMA / NSDMA / GSI Joint Operations
+              {t('common.jointOperations')}
             </div>
           </div>
         ) : (
-          <div className="flex justify-center text-amber-400" title="Emergency Helpline: 1077">
+          <div className="flex justify-center text-amber-400" title={t('common.helpline')}>
             <PhoneCall className="h-4 w-4" />
           </div>
         )}

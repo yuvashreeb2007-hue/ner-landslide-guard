@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { SensorKPIs } from '@/services/sensor/types';
+import { useI18n } from '@/context/I18nContext';
 import { 
   ActivitySquare, 
   CheckCircle2, 
@@ -17,9 +18,11 @@ interface SensorKPICardsProps {
 }
 
 export function SensorKPICards({ kpis }: SensorKPICardsProps) {
+  const { t } = useI18n();
+
   const cards = [
     {
-      title: 'TOTAL SENSORS',
+      title: t('sensors.totalSensors'),
       value: kpis.totalSensors,
       unit: 'Nodes Deployed',
       icon: ActivitySquare,
@@ -29,7 +32,7 @@ export function SensorKPICards({ kpis }: SensorKPICardsProps) {
       subtext: '8 North Eastern States',
     },
     {
-      title: 'ONLINE / HEALTHY',
+      title: t('sensors.online'),
       value: kpis.online,
       unit: 'Active Telemetry',
       icon: CheckCircle2,
@@ -39,7 +42,7 @@ export function SensorKPICards({ kpis }: SensorKPICardsProps) {
       subtext: `${kpis.totalSensors > 0 ? Math.round((kpis.online / kpis.totalSensors) * 100) : 0}% Network Uptime`,
     },
     {
-      title: 'WARNING STATE',
+      title: t('sensors.warning'),
       value: kpis.warning,
       unit: 'Threshold Surpassed',
       icon: AlertTriangle,
@@ -49,7 +52,7 @@ export function SensorKPICards({ kpis }: SensorKPICardsProps) {
       subtext: 'Elevated Shear / Moisture',
     },
     {
-      title: 'CRITICAL HAZARD',
+      title: t('sensors.critical'),
       value: kpis.critical,
       unit: 'Immediate Threat',
       icon: Flame,
@@ -60,7 +63,7 @@ export function SensorKPICards({ kpis }: SensorKPICardsProps) {
       pulse: kpis.critical > 0,
     },
     {
-      title: 'OFFLINE / UNREACHABLE',
+      title: t('sensors.offline'),
       value: kpis.offline,
       unit: 'Maintenance Required',
       icon: PowerOff,

@@ -11,6 +11,7 @@ import { WeatherOverviewCards } from '@/components/weather/WeatherOverviewCards'
 import { RainfallAnalyticsCharts } from '@/components/weather/RainfallAnalyticsCharts';
 import { DistrictWeatherList } from '@/components/weather/DistrictWeatherList';
 import { RainfallThresholdBadge } from '@/components/weather/RainfallThresholdBadge';
+import { useI18n } from '@/context/I18nContext';
 import { 
   CloudRain, 
   CloudLightning, 
@@ -35,6 +36,7 @@ const RIVER_GAUGES = [
 ];
 
 export default function WeatherPage() {
+  const { t } = useI18n();
   const [selectedDistrictName, setSelectedDistrictName] = useState<string>('Pakyong');
   const [districtData, setDistrictData] = useState<NormalizedWeatherData | null>(null);
   const [allSummaries, setAllSummaries] = useState<DistrictWeatherSummary[]>([]);
@@ -84,14 +86,14 @@ export default function WeatherPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base md:text-lg font-black text-white font-mono tracking-wide">
-                  WEATHER & RAINFALL INTELLIGENCE OPERATIONS
+                  {t('weather.title')}
                 </h1>
                 <span className="bg-sky-900/40 text-sky-300 text-[10px] font-mono px-2 py-0.5 rounded border border-sky-700/50">
-                  IMD-AWS Network
+                  {t('weather.imdNetwork')}
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Provider-independent rainfall intensity evaluation, 4-tier hazard thresholding & pore-saturation telemetry
+                {t('weather.subtitle')}
               </p>
             </div>
           </div>
@@ -103,7 +105,7 @@ export default function WeatherPage() {
               className="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-mono font-bold rounded-lg flex items-center gap-2 shadow-md shadow-amber-950 transition-all active:scale-95 disabled:opacity-50"
             >
               <CloudLightning className={`h-4 w-4 ${isSimulating ? 'animate-bounce' : ''}`} />
-              <span>{isSimulating ? 'Injecting Deluge...' : 'Simulate Cherrapunji Cloudburst'}</span>
+              <span>{isSimulating ? t('weather.injectingDeluge') : t('weather.simulateCherrapunji')}</span>
             </button>
           </div>
         </div>
@@ -117,9 +119,9 @@ export default function WeatherPage() {
             </div>
             <button
               onClick={() => setActiveSimulationNote(null)}
-              className="text-[10px] underline text-amber-300 hover:text-white"
+              className="text-[10px] underline text-amber-300 hover:text-white font-mono"
             >
-              Dismiss
+              {t('common.dismiss')}
             </button>
           </div>
         )}
@@ -130,7 +132,7 @@ export default function WeatherPage() {
         ) : (
           <div className="bg-eoc-card p-8 rounded-xl border border-eoc-border text-center text-slate-400 text-xs flex items-center justify-center gap-2">
             <RefreshCw className="h-4 w-4 animate-spin text-sky-400" />
-            <span>Loading district meteorological telemetry...</span>
+            <span>{t('common.loading')}</span>
           </div>
         )}
 
@@ -142,7 +144,7 @@ export default function WeatherPage() {
           <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
             <Info className="h-4 w-4 text-sky-400" />
             <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider">
-              GSI-IMD 4-TIER RAINFALL THRESHOLD & LANDSLIDE RISK TRIGGER SYSTEM
+              {t('weather.thresholdTitle')}
             </h3>
           </div>
 
@@ -150,7 +152,7 @@ export default function WeatherPage() {
             {/* Normal */}
             <div className="bg-eoc-card p-3 rounded-lg border border-emerald-900/50 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-emerald-400 font-mono">NORMAL THRESHOLD</span>
+                <span className="font-bold text-emerald-400 font-mono">{t('risk.levels.NORMAL')}</span>
                 <span className="text-[10px] text-slate-400 font-mono">&lt; 35 mm/24h</span>
               </div>
               <p className="text-[11px] text-slate-300">
@@ -164,7 +166,7 @@ export default function WeatherPage() {
             {/* Watch */}
             <div className="bg-eoc-card p-3 rounded-lg border border-amber-900/50 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-amber-400 font-mono">WATCH (ELEVATED)</span>
+                <span className="font-bold text-amber-400 font-mono">{t('risk.levels.WATCH')}</span>
                 <span className="text-[10px] text-slate-400 font-mono">35 - 70 mm/24h</span>
               </div>
               <p className="text-[11px] text-slate-300">
@@ -178,7 +180,7 @@ export default function WeatherPage() {
             {/* Warning */}
             <div className="bg-eoc-card p-3 rounded-lg border border-orange-900/50 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-orange-400 font-mono">WARNING TRIGGERED</span>
+                <span className="font-bold text-orange-400 font-mono">{t('risk.levels.WARNING')}</span>
                 <span className="text-[10px] text-slate-400 font-mono">70 - 130 mm/24h</span>
               </div>
               <p className="text-[11px] text-slate-300">
@@ -192,7 +194,7 @@ export default function WeatherPage() {
             {/* Danger */}
             <div className="bg-eoc-card p-3 rounded-lg border border-red-900/60 space-y-1.5 shadow-md">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-red-400 font-mono animate-pulse">DANGER / CLOUDBURST</span>
+                <span className="font-bold text-red-400 font-mono animate-pulse">{t('risk.levels.DANGER')}</span>
                 <span className="text-[10px] text-slate-400 font-mono">&gt; 130 mm/24h</span>
               </div>
               <p className="text-[11px] text-slate-300">
@@ -218,7 +220,7 @@ export default function WeatherPage() {
             <div className="flex items-center gap-2">
               <Waves className="h-4 w-4 text-cyan-400" />
               <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider">
-                NORTHEAST INDIA CRITICAL RIVER HYDROLOGY & BASIN GAUGES
+                {t('weather.riverGaugesTitle')}
               </h3>
             </div>
             <span className="text-[10px] font-mono text-slate-400">Central Water Commission (CWC) Telemetry</span>

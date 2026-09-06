@@ -3,10 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { useOfflineSync } from '@/services/offline';
-import { Wifi, WifiOff, RefreshCw, Layers } from 'lucide-react';
+import { useI18n } from '@/context/I18nContext';
+import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
 
 export function ConnectionIndicator() {
   const { networkState, metrics, isSimulatedOffline } = useOfflineSync();
+  const { t } = useI18n();
   const pendingCount = metrics.queuedCount + metrics.syncingCount;
 
   return (
@@ -34,14 +36,14 @@ export function ConnectionIndicator() {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
           <Wifi className="h-3 w-3 text-emerald-400" />
-          <span>ONLINE</span>
+          <span>{t('common.online')}</span>
         </>
       )}
 
       {networkState === 'SYNCING' && (
         <>
           <RefreshCw className="h-3 w-3 text-amber-400 animate-spin" />
-          <span>SYNCING ({pendingCount})</span>
+          <span>{t('common.syncing')} ({pendingCount})</span>
         </>
       )}
 
@@ -52,7 +54,7 @@ export function ConnectionIndicator() {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
           </span>
           <WifiOff className="h-3 w-3 text-red-400" />
-          <span>OFFLINE</span>
+          <span>{t('common.offline')}</span>
         </>
       )}
 

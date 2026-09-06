@@ -3,6 +3,7 @@
 import React from 'react';
 import { NormalizedWeatherData } from '@/services/weather/types';
 import { RainfallThresholdBadge } from './RainfallThresholdBadge';
+import { useI18n } from '@/context/I18nContext';
 import { 
   CloudRain, 
   Droplets, 
@@ -21,6 +22,7 @@ interface WeatherOverviewCardsProps {
 }
 
 export function WeatherOverviewCards({ data }: WeatherOverviewCardsProps) {
+  const { t } = useI18n();
   const isHighRisk = data.threshold.level === 'Danger' || data.threshold.level === 'Warning';
 
   return (
@@ -62,7 +64,7 @@ export function WeatherOverviewCards({ data }: WeatherOverviewCardsProps) {
         {/* 1. Current Rainfall Rate */}
         <div className="bg-eoc-card p-3 rounded-xl border border-eoc-border shadow-md space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-[10px] font-mono">
-            <span>CURRENT RATE</span>
+            <span>{t('weather.currentRainfall')}</span>
             <CloudRain className="h-3.5 w-3.5 text-sky-400" />
           </div>
           <div className="text-xl font-black font-mono text-sky-400">
@@ -76,7 +78,7 @@ export function WeatherOverviewCards({ data }: WeatherOverviewCardsProps) {
         {/* 2. 24-Hour Rainfall */}
         <div className="bg-eoc-card p-3 rounded-xl border border-eoc-border shadow-md space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-[10px] font-mono">
-            <span>24H RAINFALL</span>
+            <span>{t('weather.rainfall24h')}</span>
             <Clock className="h-3.5 w-3.5 text-blue-400" />
           </div>
           <div className={`text-xl font-black font-mono ${data.rainfall.rainfall24hMm >= 100 ? 'text-red-400' : 'text-blue-300'}`}>
@@ -90,7 +92,7 @@ export function WeatherOverviewCards({ data }: WeatherOverviewCardsProps) {
         {/* 3. 7-Day Cumulative */}
         <div className="bg-eoc-card p-3 rounded-xl border border-eoc-border shadow-md space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-[10px] font-mono">
-            <span>7-DAY CUMULATIVE</span>
+            <span>{t('weather.rainfall7d')}</span>
             <Calendar className="h-3.5 w-3.5 text-indigo-400" />
           </div>
           <div className="text-xl font-black font-mono text-indigo-300">
@@ -104,7 +106,7 @@ export function WeatherOverviewCards({ data }: WeatherOverviewCardsProps) {
         {/* 4. Rainfall Intensity Category */}
         <div className="bg-eoc-card p-3 rounded-xl border border-eoc-border shadow-md space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-[10px] font-mono">
-            <span>INTENSITY CLASSIFICATION</span>
+            <span>{t('weather.rainfallIntensity')}</span>
             <Gauge className="h-3.5 w-3.5 text-amber-400" />
           </div>
           <div className="text-sm font-black font-mono text-amber-300 truncate pt-1">
@@ -118,21 +120,21 @@ export function WeatherOverviewCards({ data }: WeatherOverviewCardsProps) {
         {/* 5. Forecast 24h & 72h */}
         <div className="bg-eoc-card p-3 rounded-xl border border-eoc-border shadow-md space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-[10px] font-mono">
-            <span>FORECAST (24H / 72H)</span>
+            <span>{t('weather.forecast')}</span>
             <TrendingUp className="h-3.5 w-3.5 text-purple-400" />
           </div>
           <div className="text-lg font-black font-mono text-purple-300">
             {data.rainfall.forecast24hMm.toFixed(0)} <span className="text-xs text-slate-500">/</span> {data.rainfall.forecast72hMm.toFixed(0)} <span className="text-[10px] text-slate-500">mm</span>
           </div>
           <div className="text-[10px] text-slate-400 truncate">
-            IMD WRF Projection
+            IMD Projection
           </div>
         </div>
 
         {/* 6. Temperature */}
         <div className="bg-eoc-card p-3 rounded-xl border border-eoc-border shadow-md space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-[10px] font-mono">
-            <span>TEMPERATURE</span>
+            <span>{t('weather.temperature')}</span>
             <Thermometer className="h-3.5 w-3.5 text-rose-400" />
           </div>
           <div className="text-xl font-black font-mono text-rose-300">
@@ -146,7 +148,7 @@ export function WeatherOverviewCards({ data }: WeatherOverviewCardsProps) {
         {/* 7. Humidity */}
         <div className="bg-eoc-card p-3 rounded-xl border border-eoc-border shadow-md space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-[10px] font-mono">
-            <span>HUMIDITY</span>
+            <span>{t('weather.humidity')}</span>
             <Droplets className="h-3.5 w-3.5 text-cyan-400" />
           </div>
           <div className="text-xl font-black font-mono text-cyan-300">

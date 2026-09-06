@@ -2,12 +2,14 @@
 
 import React from 'react';
 import { useEOC } from '@/context/EOCContext';
+import { useI18n } from '@/context/I18nContext';
 import { SeverityBadge } from '../common/SeverityBadge';
-import { LifeBuoy, AlertTriangle, Users, Navigation, ArrowRight, Shield } from 'lucide-react';
+import { LifeBuoy, Users, Navigation, ArrowRight, Shield } from 'lucide-react';
 import Link from 'next/link';
 
 export function EmergencyPrioritySection() {
-  const { incidents, responseTeams, dispatchResponseTeam } = useEOC();
+  const { incidents } = useEOC();
+  const { t, getLocalizedPriority } = useI18n();
 
   const priorityIncidents = incidents
     .filter((i) => i.riskLevel === 'CRITICAL' || i.riskLevel === 'HIGH')
@@ -20,10 +22,10 @@ export function EmergencyPrioritySection() {
           <LifeBuoy className="h-5 w-5 text-sky-400 animate-spin-slow" />
           <div>
             <h3 className="text-sm font-bold text-white tracking-wide">
-              EMERGENCY RESPONSE PRIORITIZATION MATRIX
+              {t('emergency.title')}
             </h3>
             <p className="text-[11px] text-slate-400">
-              Immediate life-safety and lifeline clearance deployment queue (ICS Protocol)
+              {t('emergency.subtitle')}
             </p>
           </div>
         </div>
@@ -31,14 +33,14 @@ export function EmergencyPrioritySection() {
           href="/emergency"
           className="text-xs font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1 font-mono"
         >
-          <span>Full Operations Board</span>
+          <span>{t('emergency.relationshipChainTitle')}</span>
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
       <div className="divide-y divide-eoc-border/60">
         {priorityIncidents.map((inc, index) => {
-          const priorityTag = index === 0 ? 'P1 CRITICAL' : index === 1 ? 'P2 HIGH' : 'P3 ELEVATED';
+          const priorityTag = index === 0 ? getLocalizedPriority('P1') : index === 1 ? getLocalizedPriority('P2') : getLocalizedPriority('P3');
           const isP1 = index === 0;
 
           return (
@@ -77,21 +79,21 @@ export function EmergencyPrioritySection() {
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] pt-1 text-slate-400">
                     <div className="flex items-center gap-1">
                       <Users className="h-3.5 w-3.5 text-purple-400" />
-                      <span>Affected Pop:</span>
+                      <span>{t('emergency.colPopulation')}:</span>
                       <b className="text-white font-mono">{inc.affectedPopulation.toLocaleString()}</b>
                     </div>
                     <div className="flex items-center gap-1">
                       <Navigation className="h-3.5 w-3.5 text-amber-400" />
-                      <span>Road Lifeline:</span>
+                      <span>{t('emergency.colRoadStatus')}:</span>
                       <b className="text-amber-300">{inc.roadStatus}</b>
                     </div>
                     <div className="flex items-center gap-1">
                       <Shield className="h-3.5 w-3.5 text-sky-400" />
-                      <span>Units Active:</span>
+                      <span>{t('emergency.colResponseTeam')}:</span>
                       <b className="text-sky-300">
                         {inc.responseTeamsDispatched.length > 0
                           ? inc.responseTeamsDispatched.join(', ')
-                          : 'Awaiting Force Dispatch'}
+                          : t('common.pending')}
                       </b>
                     </div>
                   </div>
@@ -101,7 +103,7 @@ export function EmergencyPrioritySection() {
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 lg:w-72">
                   <div className="text-[11px] bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex-1">
                     <span className="text-[9px] font-mono font-bold text-red-400 uppercase block mb-0.5">
-                      Recommended Directive:
+                      {t('drawer.recommendedDirectives')}:
                     </span>
                     <div className="text-slate-200 line-clamp-2 text-[10px]">
                       {inc.recommendedAction}
@@ -113,7 +115,7 @@ export function EmergencyPrioritySection() {
                     className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 shadow-md shadow-sky-950 transition-all text-center whitespace-nowrap"
                   >
                     <LifeBuoy className="h-3.5 w-3.5" />
-                    <span>Dispatch</span>
+                    <span>{t('emergency.dispatch')}</span>
                   </Link>
                 </div>
               </div>

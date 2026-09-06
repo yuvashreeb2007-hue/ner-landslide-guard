@@ -12,47 +12,25 @@ import {
   SAMPLE_DISASTER_PHOTOS 
 } from '@/services/reporting';
 import { useOfflineSync } from '@/services/offline';
+import { useI18n } from '@/context/I18nContext';
 import { 
   Send, 
   MapPin, 
   Camera, 
-  Video, 
-  AlertTriangle, 
   CheckCircle2, 
   Navigation, 
   Sparkles, 
-  User, 
-  Phone, 
-  Layers, 
-  ShieldAlert, 
   ArrowRight, 
   ArrowLeft, 
   Check, 
   RefreshCw, 
   Eye, 
   Flame, 
-  FileText,
-  Clock,
-  Compass,
-  Zap,
-  Info
+  Clock, 
+  Compass, 
+  AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
-
-const INCIDENT_TYPES: { id: ReportIncidentType; label: string; icon: string; desc: string }[] = [
-  { id: 'Landslide', label: 'Landslide / Mudflow', icon: '⛰️', desc: 'Slope failure, falling debris, mud inundation' },
-  { id: 'Road Blockage', label: 'Road Blockage', icon: '🚧', desc: 'Boulders, earth slip blocking highway or path' },
-  { id: 'Crack', label: 'Slope / Berm Crack', icon: '⚡', desc: 'Tension fissure opening on road, ground or wall' },
-  { id: 'Slope Movement', label: 'Slope Creep', icon: '📐', desc: 'Gradual subsidence, tilting trees, wall bulge' },
-  { id: 'Flood', label: 'Flash Flood / Culvert Choke', icon: '🌊', desc: 'Water overtopping, debris damming, erosion' },
-];
-
-const SEVERITY_LEVELS: { id: ReportSeverity; label: string; color: string; bg: string; border: string; desc: string }[] = [
-  { id: 'LOW', label: 'LOW VIGILANCE', color: 'text-emerald-400', bg: 'bg-emerald-950/40', border: 'border-emerald-800', desc: 'Minor soil slip, no immediate infrastructure threat' },
-  { id: 'MODERATE', label: 'MODERATE CONCERN', color: 'text-amber-400', bg: 'bg-amber-950/40', border: 'border-amber-800', desc: 'Partial lane obstruction, active slow movement' },
-  { id: 'HIGH', label: 'HIGH URGENCY', color: 'text-orange-400', bg: 'bg-orange-950/40', border: 'border-orange-800', desc: 'Major road blocked, tension cracks spreading rapidly' },
-  { id: 'CRITICAL', label: 'CRITICAL EMERGENCY', color: 'text-red-400', bg: 'bg-red-950/60', border: 'border-red-700', desc: 'Imminent threat to life, habitations, or strategic lifelines' },
-];
 
 const NER_STATES_DISTRICTS: Record<string, string[]> = {
   'Sikkim': ['Pakyong', 'Gangtok', 'Mangan', 'Gyalshing', 'Namchi', 'Soreng'],
@@ -66,6 +44,8 @@ const NER_STATES_DISTRICTS: Record<string, string[]> = {
 };
 
 export default function FieldReportPage() {
+  const { t } = useI18n();
+
   // Wizard current step: 1 to 6
   const [step, setStep] = useState<number>(1);
 
@@ -94,6 +74,21 @@ export default function FieldReportPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submittedReport, setSubmittedReport] = useState<any | null>(null);
 
+  const incidentTypesList: { id: ReportIncidentType; label: string; icon: string; desc: string }[] = [
+    { id: 'Landslide', label: t('fieldReport.types.landslide.label'), icon: '⛰️', desc: t('fieldReport.types.landslide.desc') },
+    { id: 'Road Blockage', label: t('fieldReport.types.roadBlockage.label'), icon: '🚧', desc: t('fieldReport.types.roadBlockage.desc') },
+    { id: 'Crack', label: t('fieldReport.types.crack.label'), icon: '⚡', desc: t('fieldReport.types.crack.desc') },
+    { id: 'Slope Movement', label: t('fieldReport.types.slopeMovement.label'), icon: '📐', desc: t('fieldReport.types.slopeMovement.desc') },
+    { id: 'Flood', label: t('fieldReport.types.flood.label'), icon: '🌊', desc: t('fieldReport.types.flood.desc') },
+  ];
+
+  const severityLevelsList: { id: ReportSeverity; label: string; color: string; bg: string; border: string; desc: string }[] = [
+    { id: 'LOW', label: t('fieldReport.severities.LOW.label'), color: 'text-emerald-400', bg: 'bg-emerald-950/40', border: 'border-emerald-800', desc: t('fieldReport.severities.LOW.desc') },
+    { id: 'MODERATE', label: t('fieldReport.severities.MODERATE.label'), color: 'text-amber-400', bg: 'bg-amber-950/40', border: 'border-amber-800', desc: t('fieldReport.severities.MODERATE.desc') },
+    { id: 'HIGH', label: t('fieldReport.severities.HIGH.label'), color: 'text-orange-400', bg: 'bg-orange-950/40', border: 'border-orange-800', desc: t('fieldReport.severities.HIGH.desc') },
+    { id: 'CRITICAL', label: t('fieldReport.severities.CRITICAL.label'), color: 'text-red-400', bg: 'bg-red-950/60', border: 'border-red-700', desc: t('fieldReport.severities.CRITICAL.desc') },
+  ];
+
   // Step 2: Handle GPS Locate Me
   const handleLocateMe = () => {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
@@ -103,7 +98,6 @@ export default function FieldReportPage() {
           setLongitude(Number(pos.coords.longitude.toFixed(4)));
         },
         () => {
-          // fallback location
           setLatitude(27.2345);
           setLongitude(88.5123);
         }
@@ -118,7 +112,6 @@ export default function FieldReportPage() {
       const targetImg = selectedUrl || photoUrl;
       const res = await visionService.analyzeImage(targetImg, incidentType);
       setVisionResult(res);
-      // Auto-suggest severity from vision if higher
       if (res.severity === 'CRITICAL') setSeverity('CRITICAL');
     } catch (err) {
       console.error('Vision analysis error:', err);
@@ -155,7 +148,6 @@ export default function FieldReportPage() {
     };
 
     if (isOffline) {
-      // Save directly to local persistent offline queue
       const queued = enqueueReport(reportPayload);
       setOfflineQueuedReport(queued);
       setIsSubmitting(false);
@@ -194,14 +186,14 @@ export default function FieldReportPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base md:text-lg font-black text-white font-mono tracking-wide">
-                  FIELD HAZARD REPORTING PORTAL
+                  {t('fieldReport.portalTitle')}
                 </h1>
                 <span className="bg-amber-900/40 text-amber-300 text-[10px] font-mono px-2 py-0.5 rounded border border-amber-700/50">
-                  Citizen & First Responder
+                  {t('nav.citizenSdrf')}
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Submit crowdsourced observations with instant AI Computer Vision damage assessment
+                {t('fieldReport.portalSubtitle')}
               </p>
             </div>
           </div>
@@ -212,21 +204,19 @@ export default function FieldReportPage() {
               className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 font-mono text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all"
             >
               <Clock className="h-4 w-4 text-sky-400" />
-              <span>Offline Queue</span>
+              <span>{t('fieldReport.offlineQueueBtn')}</span>
             </Link>
             <Link
               href="/reports"
               className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all"
             >
               <Eye className="h-4 w-4 text-slate-400" />
-              <span>Admin Queue</span>
+              <span>{t('fieldReport.adminQueueBtn')}</span>
             </Link>
           </div>
         </div>
 
-        {/* ========================================================================= */}
         {/* OFFLINE SAVED CONFIRMATION SCREEN */}
-        {/* ========================================================================= */}
         {offlineQueuedReport ? (
           <div className="bg-gradient-to-br from-slate-900 via-amber-950/30 to-slate-950 border border-amber-600/80 rounded-2xl p-6 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-300">
             <div className="text-center space-y-2">
@@ -234,10 +224,10 @@ export default function FieldReportPage() {
                 <Clock className="h-10 w-10" />
               </div>
               <h2 className="text-lg md:text-xl font-black text-amber-300 font-mono tracking-wide">
-                Saved offline — waiting for network
+                {t('fieldReport.offlineSaved.title')}
               </h2>
               <p className="text-xs text-slate-300 max-w-md mx-auto">
-                Your report has been safely saved to your device storage. It will automatically synchronize with the Command Center as soon as internet connection returns.
+                {t('fieldReport.offlineSaved.subtitle')}
               </p>
             </div>
 
@@ -245,33 +235,33 @@ export default function FieldReportPage() {
             <div className="bg-slate-950/90 border border-amber-900/60 rounded-xl p-4 space-y-3 font-mono text-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
                 <div>
-                  <span className="text-[10px] text-slate-400 block uppercase">OFFLINE TRACKING ID</span>
+                  <span className="text-[10px] text-slate-400 block uppercase">{t('fieldReport.offlineSaved.trackingId')}</span>
                   <span className="text-base font-black text-amber-400 tracking-wider">
                     {offlineQueuedReport.id}
                   </span>
                 </div>
                 <div className="sm:text-right">
-                  <span className="text-[10px] text-slate-400 block uppercase">SYNC STATUS</span>
+                  <span className="text-[10px] text-slate-400 block uppercase">{t('fieldReport.offlineSaved.syncStatus')}</span>
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-950 text-amber-300 border border-amber-700 font-bold">
                     <Clock className="h-3.5 w-3.5 animate-spin" />
-                    QUEUED (Awaiting Network)
+                    {t('fieldReport.offlineSaved.statusQueued')}
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                 <div>
-                  <span className="text-slate-500 text-[10px] block">HAZARD TYPE</span>
+                  <span className="text-slate-500 text-[10px] block">{t('incidents.colType')}</span>
                   <span className="font-bold text-white font-sans">{offlineQueuedReport.incidentType}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-[10px] block">SEVERITY LEVEL</span>
+                  <span className="text-slate-500 text-[10px] block">{t('incidents.colSeverity')}</span>
                   <span className={`font-bold ${offlineQueuedReport.severity === 'CRITICAL' ? 'text-red-400' : 'text-amber-400'}`}>
                     {offlineQueuedReport.severity}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-[10px] block">LOCATION</span>
+                  <span className="text-slate-500 text-[10px] block">{t('incidents.colLocation')}</span>
                   <span className="font-bold text-slate-200 font-sans truncate block">
                     {offlineQueuedReport.village}, {offlineQueuedReport.district}
                   </span>
@@ -285,14 +275,14 @@ export default function FieldReportPage() {
                 href="/offline-queue"
                 className="w-full sm:w-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-950"
               >
-                <span>View in Offline Queue</span>
+                <span>{t('fieldReport.offlineSaved.viewQueue')}</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
               <button
                 onClick={handleReset}
                 className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs font-bold rounded-lg border border-slate-700 transition-all"
               >
-                Submit Another Report
+                {t('fieldReport.offlineSaved.submitAnother')}
               </button>
             </div>
           </div>
@@ -303,10 +293,10 @@ export default function FieldReportPage() {
                 <CheckCircle2 className="h-10 w-10" />
               </div>
               <h2 className="text-lg md:text-xl font-black text-white font-mono tracking-wide">
-                DISASTER HAZARD REPORT TRANSMITTED
+                {t('fieldReport.onlineTransmitted.title')}
               </h2>
               <p className="text-xs text-slate-300 max-w-md mx-auto">
-                Your field submission has been registered with the State Emergency Operations Center and queued for engineer verification.
+                {t('fieldReport.onlineTransmitted.subtitle')}
               </p>
             </div>
 
@@ -314,13 +304,13 @@ export default function FieldReportPage() {
             <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3 font-mono text-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
                 <div>
-                  <span className="text-[10px] text-slate-400 block uppercase">GENERATED INCIDENT ID</span>
+                  <span className="text-[10px] text-slate-400 block uppercase">{t('fieldReport.onlineTransmitted.incidentId')}</span>
                   <span className="text-base font-black text-sky-400 tracking-wider">
                     {submittedReport.id}
                   </span>
                 </div>
                 <div className="sm:text-right">
-                  <span className="text-[10px] text-slate-400 block uppercase">CURRENT STATUS</span>
+                  <span className="text-[10px] text-slate-400 block uppercase">{t('fieldReport.onlineTransmitted.currentStatus')}</span>
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-950 text-amber-300 border border-amber-700 font-bold">
                     <Clock className="h-3.5 w-3.5" />
                     {submittedReport.status}
@@ -330,17 +320,17 @@ export default function FieldReportPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                 <div>
-                  <span className="text-slate-500 text-[10px] block">HAZARD TYPE</span>
+                  <span className="text-slate-500 text-[10px] block">{t('incidents.colType')}</span>
                   <span className="font-bold text-white font-sans">{submittedReport.incidentType}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-[10px] block">SEVERITY LEVEL</span>
+                  <span className="text-slate-500 text-[10px] block">{t('incidents.colSeverity')}</span>
                   <span className={`font-bold ${submittedReport.severity === 'CRITICAL' ? 'text-red-400' : 'text-amber-400'}`}>
                     {submittedReport.severity}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-[10px] block">LOCATION</span>
+                  <span className="text-slate-500 text-[10px] block">{t('incidents.colLocation')}</span>
                   <span className="font-bold text-slate-200 font-sans truncate block">
                     {submittedReport.village}, {submittedReport.district}
                   </span>
@@ -351,10 +341,10 @@ export default function FieldReportPage() {
                 <div className="bg-purple-950/30 border border-purple-800/60 p-3 rounded-lg space-y-1 font-sans">
                   <div className="flex items-center gap-1.5 text-purple-300 font-mono text-[11px] font-bold">
                     <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-                    <span>AI Computer Vision Verified Issue:</span>
+                    <span>{t('fieldReport.onlineTransmitted.aiVerifiedIssue')}</span>
                   </div>
                   <p className="text-xs text-slate-200">
-                    {submittedReport.aiVisionAnalysis.detectedIssue} ({(submittedReport.aiVisionAnalysis.confidence * 100).toFixed(0)}% Confidence)
+                    {submittedReport.aiVisionAnalysis.detectedIssue} ({(submittedReport.aiVisionAnalysis.confidence * 100).toFixed(0)}% {t('drawer.aiConfidence', { score: 100 }).split(':')[0]})
                   </p>
                 </div>
               )}
@@ -366,7 +356,7 @@ export default function FieldReportPage() {
                 href="/reports"
                 className="w-full sm:w-auto px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-mono text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-sky-950"
               >
-                <span>Track Report in Moderation Queue</span>
+                <span>{t('fieldReport.onlineTransmitted.trackInQueue')}</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
               <Link
@@ -374,32 +364,25 @@ export default function FieldReportPage() {
                 className="w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-xs font-bold rounded-lg border border-slate-700 flex items-center justify-center gap-2 transition-all"
               >
                 <MapPin className="h-3.5 w-3.5 text-sky-400" />
-                <span>View On GIS Map</span>
+                <span>{t('fieldReport.onlineTransmitted.viewOnMap')}</span>
               </Link>
               <button
                 onClick={handleReset}
                 className="w-full sm:w-auto px-4 py-2.5 bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white font-mono text-xs rounded-lg transition-all"
               >
-                Submit Another Report
+                {t('fieldReport.offlineSaved.submitAnother')}
               </button>
             </div>
           </div>
         ) : (
-          /* ========================================================================= */
           /* 6-STEP MOBILE-FRIENDLY REPORTING WIZARD */
-          /* ========================================================================= */
           <div className="bg-eoc-card border border-eoc-border rounded-xl p-5 md:p-6 shadow-2xl space-y-6">
             {/* Step Progress Tracker */}
             <div className="border-b border-eoc-border pb-4">
               <div className="flex items-center justify-between text-xs font-mono text-slate-400 mb-2">
-                <span>STEP {step} OF 6</span>
+                <span>{t('fieldReport.stepCount', { step })}</span>
                 <span className="text-amber-400 font-bold">
-                  {step === 1 && '1. Incident Type'}
-                  {step === 2 && '2. Location Capture'}
-                  {step === 3 && '3. Hazard Description'}
-                  {step === 4 && '4. Severity Rating'}
-                  {step === 5 && '5. Media & AI Vision Scan'}
-                  {step === 6 && '6. Review & Submit'}
+                  {t(`fieldReport.steps.${step}`)}
                 </span>
               </div>
               <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
@@ -415,34 +398,34 @@ export default function FieldReportPage() {
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div>
                   <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
-                    Select Incident / Hazard Type
+                    {t('fieldReport.steps.1')}
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Choose the primary category that best describes the ground observation
+                    {t('fieldReport.portalSubtitle')}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {INCIDENT_TYPES.map((t) => {
-                    const isSelected = incidentType === t.id;
+                  {incidentTypesList.map((item) => {
+                    const isSelected = incidentType === item.id;
                     return (
                       <button
-                        key={t.id}
+                        key={item.id}
                         type="button"
-                        onClick={() => setIncidentType(t.id)}
+                        onClick={() => setIncidentType(item.id)}
                         className={`p-4 rounded-xl border text-left transition-all flex items-start gap-3 ${
                           isSelected
                             ? 'bg-amber-950/60 border-amber-500 text-white shadow-lg shadow-amber-950/40 ring-1 ring-amber-500'
                             : 'bg-eoc-surface/60 border-eoc-border text-slate-300 hover:bg-eoc-surface hover:border-slate-700'
                         }`}
                       >
-                        <span className="text-2xl">{t.icon}</span>
+                        <span className="text-2xl">{item.icon}</span>
                         <div className="space-y-1">
                           <div className="font-bold text-xs flex items-center justify-between">
-                            <span>{t.label}</span>
+                            <span>{item.label}</span>
                             {isSelected && <Check className="h-4 w-4 text-amber-400" />}
                           </div>
-                          <p className="text-[11px] text-slate-400 leading-snug">{t.desc}</p>
+                          <p className="text-[11px] text-slate-400 leading-snug">{item.desc}</p>
                         </div>
                       </button>
                     );
@@ -456,10 +439,10 @@ export default function FieldReportPage() {
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div>
                   <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
-                    Capture Incident Location
+                    {t('fieldReport.location.title')}
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Use automatic GPS positioning or select from Northeast India districts
+                    {t('fieldReport.location.subtitle')}
                   </p>
                 </div>
 
@@ -468,7 +451,7 @@ export default function FieldReportPage() {
                   <div className="flex items-center gap-2.5">
                     <Navigation className="h-5 w-5 text-sky-400 animate-pulse" />
                     <div>
-                      <span className="text-xs font-bold text-white font-mono block">DEVICE GEOLOCATION (GPS)</span>
+                      <span className="text-xs font-bold text-white font-mono block">{t('fieldReport.location.gpsTitle')}</span>
                       <span className="text-[11px] text-slate-400 font-mono">
                         Lat: {latitude.toFixed(4)}° N, Lng: {longitude.toFixed(4)}° E
                       </span>
@@ -480,14 +463,14 @@ export default function FieldReportPage() {
                     className="px-3 py-1.5 bg-sky-950 hover:bg-sky-900 text-sky-300 text-xs font-mono font-bold rounded-lg border border-sky-800 flex items-center gap-1.5 transition-all"
                   >
                     <Compass className="h-3.5 w-3.5" />
-                    <span>Auto-Locate GPS</span>
+                    <span>{t('fieldReport.location.autoLocate')}</span>
                   </button>
                 </div>
 
                 {/* State & District Pickers */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="space-y-1.5">
-                    <label className="text-slate-300 font-semibold">State (Northeast India):</label>
+                    <label className="text-slate-300 font-semibold">{t('fieldReport.location.state')}</label>
                     <select
                       value={state}
                       onChange={(e) => {
@@ -504,7 +487,7 @@ export default function FieldReportPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-slate-300 font-semibold">District:</label>
+                    <label className="text-slate-300 font-semibold">{t('fieldReport.location.district')}</label>
                     <select
                       value={district}
                       onChange={(e) => setDistrict(e.target.value)}
@@ -519,7 +502,7 @@ export default function FieldReportPage() {
 
                 {/* Village / Landmark */}
                 <div className="space-y-1.5 text-xs">
-                  <label className="text-slate-300 font-semibold">Village / Highway Landmark / Chainage:</label>
+                  <label className="text-slate-300 font-semibold">{t('fieldReport.location.village')}</label>
                   <input
                     type="text"
                     value={village}
@@ -536,20 +519,20 @@ export default function FieldReportPage() {
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div>
                   <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
-                    Hazard Description & Vulnerability Impact
+                    {t('fieldReport.description.title')}
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Describe the physical event, crack dimensions, and affected transportation
+                    {t('fieldReport.description.subtitle')}
                   </p>
                 </div>
 
                 <div className="space-y-1.5 text-xs">
-                  <label className="text-slate-300 font-semibold">Incident Narrative / Observation Details:</label>
+                  <label className="text-slate-300 font-semibold">{t('fieldReport.description.narrative')}</label>
                   <textarea
                     rows={4}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe what you witnessed (e.g. 3-inch wide tension cracks opening on retaining wall, continuous mudslide blocking both lanes, tilted trees)..."
+                    placeholder={t('fieldReport.description.placeholder')}
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 focus:outline-none focus:border-amber-500 text-xs font-sans leading-relaxed"
                   />
                 </div>
@@ -558,8 +541,8 @@ export default function FieldReportPage() {
                   {/* Road Blocked Toggle */}
                   <div className="bg-eoc-surface p-3 rounded-lg border border-eoc-border flex items-center justify-between">
                     <div>
-                      <span className="font-semibold text-white block">Highway / Roadway Blocked?</span>
-                      <span className="text-[11px] text-slate-400">Vehicle transit obstructed</span>
+                      <span className="font-semibold text-white block">{t('fieldReport.description.roadBlocked')}</span>
+                      <span className="text-[11px] text-slate-400">{t('fieldReport.description.roadBlockedDesc')}</span>
                     </div>
                     <input
                       type="checkbox"
@@ -572,8 +555,8 @@ export default function FieldReportPage() {
                   {/* Structures at Risk */}
                   <div className="bg-eoc-surface p-3 rounded-lg border border-eoc-border flex items-center justify-between">
                     <div>
-                      <span className="font-semibold text-white block">Houses / Structures at Risk:</span>
-                      <span className="text-[11px] text-slate-400">Habitations near toe</span>
+                      <span className="font-semibold text-white block">{t('fieldReport.description.structuresAtRisk')}</span>
+                      <span className="text-[11px] text-slate-400">{t('fieldReport.description.structuresDesc')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -604,15 +587,15 @@ export default function FieldReportPage() {
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div>
                   <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
-                    Select Hazard Severity Level
+                    {t('fieldReport.steps.4')}
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Assess the threat to life, structures, and regional connectivity
+                    {t('fieldReport.severities.CRITICAL.desc')}
                   </p>
                 </div>
 
                 <div className="space-y-2.5">
-                  {SEVERITY_LEVELS.map((lvl) => {
+                  {severityLevelsList.map((lvl) => {
                     const isSelected = severity === lvl.id;
                     return (
                       <div
@@ -648,17 +631,17 @@ export default function FieldReportPage() {
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div>
                   <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
-                    Attach Photo / Video & Run AI Computer Vision Diagnostic
+                    {t('fieldReport.media.title')}
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Upload image or pick from test samples to trigger neural network hazard analysis
+                    {t('fieldReport.media.subtitle')}
                   </p>
                 </div>
 
-                {/* Sample Photo Pickers for testing */}
+                {/* Sample Photo Pickers */}
                 <div className="space-y-1.5">
                   <span className="text-[10px] text-slate-400 uppercase font-mono block">
-                    Choose Disaster Test Photo (Simulated Ground Capture):
+                    {t('fieldReport.media.samplePrompt')}
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {SAMPLE_DISASTER_PHOTOS.map((sp) => {
@@ -692,7 +675,7 @@ export default function FieldReportPage() {
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-purple-400" />
                     <span className="text-xs font-bold text-white font-mono">
-                      AI Computer Vision Damage Classifier
+                      {t('fieldReport.media.aiScanTitle')}
                     </span>
                   </div>
                   <button
@@ -702,7 +685,7 @@ export default function FieldReportPage() {
                     className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-mono font-bold rounded-lg flex items-center gap-1.5 transition-all"
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isAnalyzingVision ? 'animate-spin' : ''}`} />
-                    <span>{isAnalyzingVision ? 'Scanning Image...' : 'Run Vision Scan'}</span>
+                    <span>{isAnalyzingVision ? t('fieldReport.media.scanning') : t('fieldReport.media.runScan')}</span>
                   </button>
                 </div>
 
@@ -712,26 +695,26 @@ export default function FieldReportPage() {
                     <div className="flex items-center justify-between border-b border-purple-900/50 pb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-mono bg-purple-900 text-purple-300 px-2 py-0.5 rounded uppercase font-bold">
-                          AI VISION RESULT
+                          {t('fieldReport.media.aiResultHeader')}
                         </span>
                         <span className="text-xs font-bold text-white font-mono">
                           {visionResult.detectedIssue}
                         </span>
                       </div>
                       <span className="text-xs font-mono text-purple-300 font-bold">
-                        Confidence: {(visionResult.confidence * 100).toFixed(0)}%
+                        {t('fieldReport.media.confidence', { score: (visionResult.confidence * 100).toFixed(0) })}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       <div className="space-y-1">
-                        <span className="text-[10px] text-slate-400 font-mono block">DETECTED OBSERVATIONS:</span>
+                        <span className="text-[10px] text-slate-400 font-mono block">{t('fieldReport.media.observations')}</span>
                         <p className="text-[11px] text-slate-200 leading-relaxed font-sans">
                           {visionResult.observations}
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <span className="text-[10px] text-slate-400 font-mono block">GEOTECHNICAL TAGS:</span>
+                        <span className="text-[10px] text-slate-400 font-mono block">{t('fieldReport.media.geotechnicalTags')}</span>
                         <div className="flex flex-wrap gap-1">
                           {visionResult.geotechnicalTags.map((tag, idx) => (
                             <span
@@ -746,7 +729,7 @@ export default function FieldReportPage() {
                     </div>
 
                     <div className="text-[10px] text-slate-400 border-t border-purple-950 pt-2 flex items-center justify-between font-mono">
-                      <span>Severity Assessment: <b className="text-red-400">{visionResult.severity}</b></span>
+                      <span>{t('fieldReport.media.severityAssessment')} <b className="text-red-400">{visionResult.severity}</b></span>
                       <span>{new Date(visionResult.processedAt).toLocaleTimeString()}</span>
                     </div>
                   </div>
@@ -759,33 +742,33 @@ export default function FieldReportPage() {
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div>
                   <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
-                    Reporter Contact & Final Review
+                    {t('fieldReport.review.title')}
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Verify all submission parameters before broadcasting to the disaster operations network
+                    {t('fieldReport.review.subtitle')}
                   </p>
                 </div>
 
                 {/* Reporter Profile */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   <div className="space-y-1.5">
-                    <label className="text-slate-300 font-semibold">Reporter Role:</label>
+                    <label className="text-slate-300 font-semibold">{t('fieldReport.review.reporterRole')}</label>
                     <select
                       value={reporterType}
                       onChange={(e) => setReporterType(e.target.value as ReporterType)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 font-mono text-xs focus:outline-none"
                     >
-                      <option value="Citizen">Citizen</option>
-                      <option value="Field Officer">Field Officer</option>
-                      <option value="NDRF Scout">NDRF Scout</option>
-                      <option value="BRO Patrol">BRO Patrol</option>
-                      <option value="Forest Guard">Forest Guard</option>
-                      <option value="Police Patrol">Police Patrol</option>
+                      <option value="Citizen">{t('fieldReport.review.roles.citizen')}</option>
+                      <option value="Field Officer">{t('fieldReport.review.roles.fieldOfficer')}</option>
+                      <option value="NDRF Scout">{t('fieldReport.review.roles.ndrfScout')}</option>
+                      <option value="BRO Patrol">{t('fieldReport.review.roles.broPatrol')}</option>
+                      <option value="Forest Guard">{t('fieldReport.review.roles.forestGuard')}</option>
+                      <option value="Police Patrol">{t('fieldReport.review.roles.policePatrol')}</option>
                     </select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-slate-300 font-semibold">Your Name:</label>
+                    <label className="text-slate-300 font-semibold">{t('fieldReport.review.yourName')}</label>
                     <input
                       type="text"
                       value={reporterName}
@@ -796,7 +779,7 @@ export default function FieldReportPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-slate-300 font-semibold">Contact Phone (for EOC callback):</label>
+                    <label className="text-slate-300 font-semibold">{t('fieldReport.review.phone')}</label>
                     <input
                       type="text"
                       value={contactPhone}
@@ -810,25 +793,25 @@ export default function FieldReportPage() {
                 {/* Review Card */}
                 <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2.5 text-xs font-mono">
                   <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block">
-                    SUBMISSION SUMMARY INSPECTOR:
+                    {t('fieldReport.review.summaryTitle')}
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
                     <div>
-                      <span className="text-slate-500 block">TYPE:</span>
+                      <span className="text-slate-500 block">{t('incidents.colType')}:</span>
                       <span className="text-white font-bold">{incidentType}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">SEVERITY:</span>
+                      <span className="text-slate-500 block">{t('incidents.colSeverity')}:</span>
                       <span className="text-red-400 font-bold">{severity}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">LOCATION:</span>
+                      <span className="text-slate-500 block">{t('incidents.colLocation')}:</span>
                       <span className="text-slate-200 truncate block">{village}, {district}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">ROADWAY:</span>
+                      <span className="text-slate-500 block">{t('emergency.colRoadStatus')}:</span>
                       <span className={roadBlocked ? 'text-red-400' : 'text-emerald-400'}>
-                        {roadBlocked ? 'Blocked' : 'Clear'}
+                        {roadBlocked ? t('kpi.roadsBlocked') : t('common.active')}
                       </span>
                     </div>
                   </div>
@@ -845,7 +828,7 @@ export default function FieldReportPage() {
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
-                  <span>Previous Step</span>
+                  <span>{t('fieldReport.review.prevStep')}</span>
                 </button>
               ) : (
                 <div />
@@ -857,7 +840,7 @@ export default function FieldReportPage() {
                   onClick={() => setStep(step + 1)}
                   className="px-5 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-mono text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-md shadow-amber-950 transition-all active:scale-95"
                 >
-                  <span>Next Step</span>
+                  <span>{t('fieldReport.review.nextStep')}</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               ) : (
@@ -868,7 +851,7 @@ export default function FieldReportPage() {
                   className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-mono text-xs font-black rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-950 transition-all active:scale-95"
                 >
                   <Send className={`h-4 w-4 ${isSubmitting ? 'animate-spin' : ''}`} />
-                  <span>{isSubmitting ? 'Transmitting to EOC...' : 'Submit Field Report'}</span>
+                  <span>{isSubmitting ? t('fieldReport.review.submittingBtn') : t('fieldReport.review.submitBtn')}</span>
                 </button>
               )}
             </div>

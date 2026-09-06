@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { SimulationScenario } from '@/services/sensor/types';
+import { useI18n } from '@/context/I18nContext';
 import { 
   Zap, 
   RefreshCw, 
@@ -23,6 +24,7 @@ export function SensorSimulatorControls({
   onSetScenario,
   onTriggerTick,
 }: SensorSimulatorControlsProps) {
+  const { t } = useI18n();
   const [activeScenario, setActiveScenario] = useState<SimulationScenario>('WARNING');
   const [isPulsing, setIsPulsing] = useState(false);
 
@@ -47,7 +49,7 @@ export function SensorSimulatorControls({
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-xs md:text-sm font-bold text-white uppercase font-mono tracking-wider">
-              IoT Sensor Fleet Simulator & Telemetry Injector
+              {t('sensors.simulatorTitle')}
             </h3>
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
           </div>
@@ -69,7 +71,7 @@ export function SensorSimulatorControls({
             }`}
           >
             <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-            <span>Normal State</span>
+            <span>{t('sensors.scenarioNormal')}</span>
           </button>
 
           <button
@@ -81,7 +83,7 @@ export function SensorSimulatorControls({
             }`}
           >
             <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-            <span>Warning State</span>
+            <span>{t('sensors.scenarioWarning')}</span>
           </button>
 
           <button
@@ -93,7 +95,7 @@ export function SensorSimulatorControls({
             }`}
           >
             <Flame className="h-3.5 w-3.5 text-red-400" />
-            <span>Critical Failure</span>
+            <span>{t('sensors.scenarioCritical')}</span>
           </button>
         </div>
 
@@ -102,7 +104,7 @@ export function SensorSimulatorControls({
           className="bg-slate-800 hover:bg-slate-700 text-sky-300 font-mono text-xs font-bold px-3 py-2 rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all active:scale-95"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${isPulsing ? 'animate-spin text-sky-400' : ''}`} />
-          <span>Inject Pulse</span>
+          <span>{t('sensors.triggerTick')}</span>
         </button>
       </div>
     </div>

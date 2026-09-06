@@ -2,24 +2,20 @@
 
 import React, { useState } from 'react';
 import { useEOC } from '@/context/EOCContext';
-import { Incident, IncidentType, IncidentStatus } from '@/types';
+import { useI18n } from '@/context/I18nContext';
+import { Incident } from '@/types';
 import { SeverityBadge } from '../common/SeverityBadge';
 import { 
   Search, 
-  Filter, 
-  AlertTriangle, 
   MapPin, 
-  Clock, 
   ShieldAlert, 
-  CheckCircle2, 
-  LifeBuoy, 
-  Eye,
-  ChevronDown
+  LifeBuoy
 } from 'lucide-react';
 import Link from 'next/link';
 
 export function IncidentsTable() {
   const { incidents, setSelectedZone, riskZones } = useEOC();
+  const { t } = useI18n();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -39,7 +35,6 @@ export function IncidentsTable() {
   });
 
   const handleInspectOnMap = (inc: Incident) => {
-    // Find matching risk zone or create focus
     const zone = riskZones.find(z => z.district === inc.district) || riskZones[0];
     setSelectedZone(zone);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -53,10 +48,10 @@ export function IncidentsTable() {
           <ShieldAlert className="h-5 w-5 text-red-400" />
           <div>
             <h3 className="text-sm font-bold text-white tracking-wide">
-              LIVE VERIFIED INCIDENTS FEED
+              {t('incidents.tableTitle')}
             </h3>
             <p className="text-[11px] text-slate-400">
-              Real-time operational log of ground slope failures, cracks & highway lifelines
+              {t('dashboard.centerSubtitle')}
             </p>
           </div>
         </div>
@@ -68,7 +63,7 @@ export function IncidentsTable() {
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search district, highway..."
+              placeholder={t('incidents.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500"
@@ -81,12 +76,12 @@ export function IncidentsTable() {
             onChange={(e) => setTypeFilter(e.target.value)}
             className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none cursor-pointer"
           >
-            <option value="ALL">All Hazard Types</option>
-            <option value="Landslide">Landslides</option>
-            <option value="Crack">Tension Cracks</option>
-            <option value="Road Blockage">Road Blockages</option>
-            <option value="Slope Movement">Slope Creep</option>
-            <option value="Flash Flood">Flash Floods</option>
+            <option value="ALL">{t('common.all')} {t('incidents.colType')}</option>
+            <option value="Landslide">{t('fieldReport.types.landslide.label')}</option>
+            <option value="Crack">{t('fieldReport.types.crack.label')}</option>
+            <option value="Road Blockage">{t('fieldReport.types.roadBlockage.label')}</option>
+            <option value="Slope Movement">{t('fieldReport.types.slopeMovement.label')}</option>
+            <option value="Flash Flood">{t('fieldReport.types.flood.label')}</option>
           </select>
 
           {/* Status Filter */}
@@ -95,11 +90,11 @@ export function IncidentsTable() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none cursor-pointer"
           >
-            <option value="ALL">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="Response Dispatched">Dispatched</option>
-            <option value="Under Review">Under Review</option>
-            <option value="Resolved">Resolved</option>
+            <option value="ALL">{t('common.all')} {t('common.status')}</option>
+            <option value="Active">{t('common.active')}</option>
+            <option value="Response Dispatched">{t('common.dispatched')}</option>
+            <option value="Under Review">{t('common.pending')}</option>
+            <option value="Resolved">{t('common.resolved')}</option>
           </select>
         </div>
       </div>
@@ -109,22 +104,22 @@ export function IncidentsTable() {
         <table className="w-full text-left text-xs text-slate-300">
           <thead className="bg-slate-900/90 text-slate-400 uppercase font-mono text-[10px] tracking-wider border-b border-eoc-border">
             <tr>
-              <th className="p-3">Incident ID</th>
-              <th className="p-3">District / State</th>
-              <th className="p-3">Location & Highway</th>
-              <th className="p-3">Risk Level</th>
-              <th className="p-3">Hazard Type</th>
-              <th className="p-3">Reported Time</th>
-              <th className="p-3">Source</th>
-              <th className="p-3">Status</th>
-              <th className="p-3 text-right">Actions</th>
+              <th className="p-3">{t('incidents.colId')}</th>
+              <th className="p-3">{t('fieldReport.location.state')}</th>
+              <th className="p-3">{t('incidents.colLocation')}</th>
+              <th className="p-3">{t('incidents.colSeverity')}</th>
+              <th className="p-3">{t('incidents.colType')}</th>
+              <th className="p-3">{t('incidents.colTime')}</th>
+              <th className="p-3">{t('incidents.colReporter')}</th>
+              <th className="p-3">{t('incidents.colStatus')}</th>
+              <th className="p-3 text-right">{t('incidents.colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-eoc-border/60 font-sans">
             {filteredIncidents.length === 0 ? (
               <tr>
                 <td colSpan={9} className="p-8 text-center text-slate-400">
-                  No incidents matching the current search and filter criteria.
+                  {t('incidents.noIncidents')}
                 </td>
               </tr>
             ) : (
@@ -245,11 +240,11 @@ export function IncidentsTable() {
                   <div className="font-bold text-amber-400">{selectedIncident.roadStatus}</div>
                 </div>
                 <div className="bg-eoc-surface p-2 rounded border border-eoc-border">
-                  <span className="text-slate-400">Population Affected:</span>
+                  <span className="text-slate-400">{t('emergency.colPopulation')}:</span>
                   <div className="font-bold text-white">{selectedIncident.affectedPopulation.toLocaleString()}</div>
                 </div>
                 <div className="bg-eoc-surface p-2 rounded border border-eoc-border">
-                  <span className="text-slate-400">Source:</span>
+                  <span className="text-slate-400">{t('incidents.colReporter')}:</span>
                   <div className="font-bold text-sky-400">{selectedIncident.source} ({selectedIncident.reporterName || 'Patrol'})</div>
                 </div>
               </div>
@@ -257,12 +252,12 @@ export function IncidentsTable() {
               {selectedIncident.responseTeamsDispatched.length > 0 && (
                 <div className="bg-blue-950/40 p-2.5 rounded border border-blue-900/60">
                   <span className="text-[10px] font-mono text-blue-300 font-bold uppercase block mb-1">
-                    Dispatched Response Forces:
+                    {t('emergency.colResponseTeam')}:
                   </span>
                   <div className="flex flex-wrap gap-1.5">
-                    {selectedIncident.responseTeamsDispatched.map((t, i) => (
+                    {selectedIncident.responseTeamsDispatched.map((team, i) => (
                       <span key={i} className="bg-blue-900/60 text-blue-200 px-2 py-0.5 rounded text-[10px] border border-blue-700">
-                        {t}
+                        {team}
                       </span>
                     ))}
                   </div>
@@ -271,7 +266,7 @@ export function IncidentsTable() {
 
               <div className="bg-red-950/40 p-2.5 rounded border border-red-900/60">
                 <span className="text-[10px] font-mono text-red-400 font-bold uppercase block mb-0.5">
-                  Recommended Action Directive:
+                  {t('drawer.recommendedDirectives')}:
                 </span>
                 <p className="text-slate-200">{selectedIncident.recommendedAction}</p>
               </div>
@@ -282,14 +277,14 @@ export function IncidentsTable() {
                 onClick={() => setSelectedIncident(null)}
                 className="px-4 py-1.5 bg-slate-800 text-slate-300 rounded hover:bg-slate-700 text-xs font-semibold"
               >
-                Close
+                {t('common.close')}
               </button>
               <Link
                 href="/emergency"
                 className="px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 text-xs font-bold flex items-center gap-1"
               >
                 <LifeBuoy className="h-3.5 w-3.5" />
-                Manage in Emergency Operations
+                {t('nav.emergency')}
               </Link>
             </div>
           </div>

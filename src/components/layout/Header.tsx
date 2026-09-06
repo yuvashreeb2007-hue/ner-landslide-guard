@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useEOC } from '@/context/EOCContext';
+import { useI18n } from '@/context/I18nContext';
 import { NER_STATES } from '@/data/mockData';
 import { 
   Bell, 
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import { SeverityBadge } from '../common/SeverityBadge';
 import { ConnectionIndicator } from '@/components/pwa/ConnectionIndicator';
+import { LanguageSelector } from './LanguageSelector';
 
 export function Header() {
   const {
@@ -36,6 +38,8 @@ export function Header() {
     createEmergencyAlert,
     eocStats
   } = useEOC();
+
+  const { t, getLocalizedAlert } = useI18n();
 
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -76,25 +80,28 @@ export function Header() {
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
               </span>
               <span className="tracking-wider uppercase font-mono text-[11px] bg-red-900/80 px-1.5 py-0.5 rounded border border-red-700">
-                CAP LIVE BROADCAST ({activeAlerts.length})
+                {t('header.capBroadcast')} ({activeAlerts.length})
               </span>
             </div>
 
             <div className="flex-1 mx-4 overflow-hidden whitespace-nowrap">
               <div className="inline-block animate-ticker">
-                {activeAlerts.map((a, i) => (
-                  <span key={a.id} className="mx-6 inline-flex items-center gap-2">
-                    <span className="font-bold text-white">[{a.state} - {a.affectedDistrict}]:</span>
-                    <span>{a.title}</span>
-                    <span className="text-red-400">({a.issuedTime})</span>
-                    {i < activeAlerts.length - 1 && <span className="text-red-500">◆</span>}
-                  </span>
-                ))}
+                {activeAlerts.map((a, i) => {
+                  const locAlert = getLocalizedAlert(a);
+                  return (
+                    <span key={a.id} className="mx-6 inline-flex items-center gap-2">
+                      <span className="font-bold text-white">[{a.state} - {a.affectedDistrict}]:</span>
+                      <span>{locAlert.title}</span>
+                      <span className="text-red-400">({a.issuedTime})</span>
+                      {i < activeAlerts.length - 1 && <span className="text-red-500">◆</span>}
+                    </span>
+                  );
+                })}
               </div>
             </div>
 
             <div className="text-[11px] font-mono text-red-300 shrink-0 hidden md:block">
-              DEFCON-2 DISASTER MONITORING ACTIVE
+              {t('common.defconActive')}
             </div>
           </div>
         )}
@@ -106,15 +113,15 @@ export function Header() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="font-extrabold tracking-wider text-base md:text-lg bg-gradient-to-r from-sky-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent font-mono">
-                  NER LANDSLIDEGUARD
+                  {t('common.appName')}
                 </span>
                 <span className="text-[10px] uppercase font-mono bg-sky-950/80 text-sky-300 border border-sky-800/80 px-1.5 py-0.5 rounded flex items-center gap-1">
                   <Activity className="h-3 w-3 text-sky-400 animate-pulse" />
-                  EOC OPERATIONAL
+                  {t('common.eocOperational')}
                 </span>
               </div>
               <span className="text-[10px] text-eoc-muted hidden sm:block">
-                National Disaster Management & North Eastern Council Early Warning Command
+                {t('common.appSubtitle')}
               </span>
             </div>
           </div>
@@ -123,7 +130,9 @@ export function Header() {
           <div className="flex items-center gap-2">
             {/* State Selector */}
             <div className="flex items-center bg-eoc-card border border-eoc-border rounded-md px-2 py-1">
-              <span className="text-[11px] text-eoc-muted mr-1.5 hidden lg:inline font-mono">REGION:</span>
+              <span className="text-[11px] text-eoc-muted mr-1.5 hidden lg:inline font-mono">
+                {t('common.region')}:
+              </span>
               <select
                 value={selectedState}
                 onChange={(e) => setSelectedState(e.target.value)}
@@ -131,7 +140,7 @@ export function Header() {
               >
                 {NER_STATES.map((st) => (
                   <option key={st} value={st} className="bg-eoc-card text-white">
-                    {st}
+                    {st === 'All NER' ? t('common.allStates') : st}
                   </option>
                 ))}
               </select>
@@ -149,7 +158,7 @@ export function Header() {
                       : 'text-eoc-muted hover:text-white'
                   }`}
                 >
-                  {hz}
+                  {hz === 'LIVE' ? t('common.live') : hz}
                 </button>
               ))}
             </div>
@@ -157,6 +166,9 @@ export function Header() {
 
           {/* Right: Actions & Indicators */}
           <div className="flex items-center gap-2">
+            {/* Language Selector in Header */}
+            <LanguageSelector />
+
             {/* Live Network & Offline PWA Status Indicator */}
             <ConnectionIndicator />
 
@@ -173,7 +185,7 @@ export function Header() {
             >
               <Zap className="h-3.5 w-3.5 text-amber-400" />
               <span className="hidden sm:inline">
-                {isSimulating ? 'Simulating...' : 'Simulate Cloudburst'}
+                {isSimulating ? t('header.simulating') : t('header.simulateCloudburst')}
               </span>
             </button>
 
@@ -183,7 +195,7 @@ export function Header() {
               className="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-md shadow-md shadow-red-950/50 transition-all border border-red-400/40 active:scale-95"
             >
               <Radio className="h-3.5 w-3.5 animate-pulse" />
-              <span className="hidden sm:inline">Issue CAP Alert</span>
+              <span className="hidden sm:inline">{t('header.issueCapAlert')}</span>
             </button>
 
             {/* Audio Sentry Toggle */}
@@ -194,7 +206,7 @@ export function Header() {
                   ? 'bg-sky-950/60 text-sky-300 border-sky-800'
                   : 'bg-slate-900 text-slate-500 border-slate-800'
               }`}
-              title={audioAlertsEnabled ? 'Emergency Siren Audio Enabled' : 'Emergency Siren Audio Muted'}
+              title={audioAlertsEnabled ? t('header.sirenEnabled') : t('header.sirenMuted')}
             >
               {audioAlertsEnabled ? (
                 <Volume2 className="h-4 w-4 text-sky-400" />
@@ -223,7 +235,7 @@ export function Header() {
                   <div className="px-3 py-2 bg-eoc-surface border-b border-eoc-border flex items-center justify-between">
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
                       <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-                      Active Early Warnings ({activeAlerts.length})
+                      {t('header.activeWarnings')} ({activeAlerts.length})
                     </span>
                     <button
                       onClick={() => setShowNotifications(false)}
@@ -233,20 +245,23 @@ export function Header() {
                     </button>
                   </div>
                   <div className="max-h-80 overflow-y-auto divide-y divide-eoc-border">
-                    {alerts.slice(0, 5).map((alt) => (
-                      <div key={alt.id} className="p-3 hover:bg-eoc-surface/60 transition-all">
-                        <div className="flex items-center justify-between mb-1">
-                          <SeverityBadge level={alt.severity} size="sm" pulse={alt.severity === 'RED'} />
-                          <span className="text-[10px] text-eoc-muted font-mono">{alt.issuedTime}</span>
+                    {alerts.slice(0, 5).map((alt) => {
+                      const locAlert = getLocalizedAlert(alt);
+                      return (
+                        <div key={alt.id} className="p-3 hover:bg-eoc-surface/60 transition-all">
+                          <div className="flex items-center justify-between mb-1">
+                            <SeverityBadge level={alt.severity} size="sm" pulse={alt.severity === 'RED'} />
+                            <span className="text-[10px] text-eoc-muted font-mono">{alt.issuedTime}</span>
+                          </div>
+                          <h4 className="text-xs font-semibold text-slate-100">{locAlert.title}</h4>
+                          <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{locAlert.reason}</p>
+                          <div className="mt-2 flex items-center justify-between text-[10px] text-sky-400 font-mono">
+                            <span>{alt.state} • {alt.affectedDistrict}</span>
+                            <span>{t('dashboard.deliveredCount', { count: alt.broadcastDeliveredCount.toLocaleString() })}</span>
+                          </div>
                         </div>
-                        <h4 className="text-xs font-semibold text-slate-100">{alt.title}</h4>
-                        <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{alt.reason}</p>
-                        <div className="mt-2 flex items-center justify-between text-[10px] text-sky-400 font-mono">
-                          <span>{alt.state} • {alt.affectedDistrict}</span>
-                          <span>Delivered: {alt.broadcastDeliveredCount.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -255,7 +270,7 @@ export function Header() {
             {/* Live Clock IST */}
             <div className="hidden xl:flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded text-xs font-mono text-sky-300">
               <Clock className="h-3.5 w-3.5 text-sky-400" />
-              <span>{systemTime || 'LIVE IST'}</span>
+              <span>{systemTime || t('common.liveIst')}</span>
             </div>
           </div>
         </div>
@@ -270,10 +285,10 @@ export function Header() {
                 <Radio className="h-5 w-5 text-red-400 animate-pulse" />
                 <div>
                   <h3 className="text-sm font-bold text-white tracking-wide">
-                    ISSUE EMERGENCY CAP BROADCAST BULLETIN
+                    {t('header.modalTitle')}
                   </h3>
                   <p className="text-[11px] text-red-300">
-                    Common Alerting Protocol (CAP-IPAWS) Multi-cast Generator
+                    {t('header.modalSubtitle')}
                   </p>
                 </div>
               </div>
@@ -288,7 +303,7 @@ export function Header() {
             <form onSubmit={handleBroadcastSubmit} className="p-5 space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Alert Severity</label>
+                  <label className="block text-slate-300 font-semibold mb-1">{t('header.alertSeverity')}</label>
                   <select
                     value={newAlertForm.severity}
                     onChange={(e) => setNewAlertForm({ ...newAlertForm, severity: e.target.value as any })}
@@ -300,7 +315,7 @@ export function Header() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">State / Jurisdiction</label>
+                  <label className="block text-slate-300 font-semibold mb-1">{t('header.stateJurisdiction')}</label>
                   <select
                     value={newAlertForm.state}
                     onChange={(e) => setNewAlertForm({ ...newAlertForm, state: e.target.value as any })}
@@ -314,7 +329,7 @@ export function Header() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Affected Districts & Highway Lifelines</label>
+                <label className="block text-slate-300 font-semibold mb-1">{t('header.affectedDistricts')}</label>
                 <input
                   type="text"
                   value={newAlertForm.affectedDistrict}
@@ -326,7 +341,7 @@ export function Header() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Affected Settlements / Villages (comma separated)</label>
+                <label className="block text-slate-300 font-semibold mb-1">{t('header.affectedVillages')}</label>
                 <input
                   type="text"
                   value={newAlertForm.affectedVillages}
@@ -338,7 +353,7 @@ export function Header() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Official Bulletin Headline</label>
+                <label className="block text-slate-300 font-semibold mb-1">{t('header.bulletinHeadline')}</label>
                 <input
                   type="text"
                   value={newAlertForm.title}
@@ -349,7 +364,7 @@ export function Header() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Geotechnical & Meteorological Rationale</label>
+                <label className="block text-slate-300 font-semibold mb-1">{t('header.rationale')}</label>
                 <textarea
                   rows={2}
                   value={newAlertForm.reason}
@@ -360,7 +375,7 @@ export function Header() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Recommended Action Directive</label>
+                <label className="block text-slate-300 font-semibold mb-1">{t('header.recommendedDirective')}</label>
                 <input
                   type="text"
                   value={newAlertForm.recommendedAction}
@@ -371,7 +386,7 @@ export function Header() {
               </div>
 
               <div className="bg-slate-900/60 p-2.5 rounded border border-slate-800 text-[11px] text-slate-400">
-                <span className="font-semibold text-slate-200">Multi-Channel Dissemination:</span> Cell Broadcast SMS (Geofenced), Disaster WhatsApp Bot, All India Radio Stations, Community Siren Network.
+                <span className="font-semibold text-slate-200">{t('header.multiChannel')}</span>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2">
@@ -380,14 +395,14 @@ export function Header() {
                   onClick={() => setShowAlertModal(false)}
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded flex items-center gap-1.5 shadow-lg shadow-red-950"
                 >
                   <Send className="h-3.5 w-3.5" />
-                  Transmit Broadcast Now
+                  {t('header.transmitBtn')}
                 </button>
               </div>
             </form>

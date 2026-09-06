@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useEOC } from '@/context/EOCContext';
+import { useI18n } from '@/context/I18nContext';
 import { 
   AlertOctagon, 
   ShieldAlert, 
@@ -9,23 +10,22 @@ import {
   Radio, 
   FileSpreadsheet, 
   ActivitySquare,
-  TrendingUp,
-  TrendingDown,
   ArrowUpRight
 } from 'lucide-react';
 import Link from 'next/link';
 
 export function KPISection() {
   const { eocStats } = useEOC();
+  const { t } = useI18n();
 
   const cards = [
     {
       id: 'critical-zones',
-      title: 'Active Critical Zones',
+      title: t('kpi.criticalZones'),
       value: eocStats.activeCriticalZones,
-      unit: 'Zones',
-      delta: `+${eocStats.trends.criticalZonesDelta} in 24h`,
-      deltaType: 'increase', // bad
+      unit: t('kpi.unitZones'),
+      delta: `+${eocStats.trends.criticalZonesDelta} ${t('kpi.in24h')}`,
+      deltaType: 'increase',
       icon: AlertOctagon,
       color: 'text-red-400',
       bgColor: 'bg-red-950/40 border-red-900/60',
@@ -35,10 +35,10 @@ export function KPISection() {
     },
     {
       id: 'high-risk',
-      title: 'High Risk Zones',
+      title: t('kpi.highRiskZones'),
       value: eocStats.highRiskZones,
-      unit: 'Zones',
-      delta: `${eocStats.trends.highRiskZonesDelta} in 24h`,
+      unit: t('kpi.unitZones'),
+      delta: `${eocStats.trends.highRiskZonesDelta} ${t('kpi.in24h')}`,
       deltaType: 'neutral',
       icon: ShieldAlert,
       color: 'text-orange-400',
@@ -49,10 +49,10 @@ export function KPISection() {
     },
     {
       id: 'roads-blocked',
-      title: 'Roads Blocked',
+      title: t('kpi.roadsBlocked'),
       value: eocStats.roadsBlocked,
-      unit: 'Lifelines',
-      delta: `+${eocStats.trends.roadsBlockedDelta} New (NH-10, NH-29)`,
+      unit: t('kpi.unitLifelines'),
+      delta: `+${eocStats.trends.roadsBlockedDelta} (NH-10, NH-29)`,
       deltaType: 'increase',
       icon: GitFork,
       color: 'text-amber-400',
@@ -63,10 +63,10 @@ export function KPISection() {
     },
     {
       id: 'active-alerts',
-      title: 'Active Alerts',
+      title: t('kpi.activeAlerts'),
       value: eocStats.activeAlerts,
-      unit: 'CAP Bulletins',
-      delta: `+${eocStats.trends.alertsDelta} Broadcasted`,
+      unit: t('kpi.unitBulletins'),
+      delta: `+${eocStats.trends.alertsDelta} ${t('kpi.broadcasted')}`,
       deltaType: 'increase',
       icon: Radio,
       color: 'text-sky-400',
@@ -77,10 +77,10 @@ export function KPISection() {
     },
     {
       id: 'reports-today',
-      title: 'Reports Today',
+      title: t('kpi.reportsToday'),
       value: eocStats.reportsToday,
-      unit: 'Submissions',
-      delta: `+${eocStats.trends.reportsDelta} Field & Citizen`,
+      unit: t('kpi.unitSubmissions'),
+      delta: `+${eocStats.trends.reportsDelta} ${t('kpi.fieldAndCitizen')}`,
       deltaType: 'increase',
       icon: FileSpreadsheet,
       color: 'text-purple-400',
@@ -91,10 +91,10 @@ export function KPISection() {
     },
     {
       id: 'sensors-online',
-      title: 'Sensors Online',
+      title: t('kpi.sensorsOnline'),
       value: `${eocStats.sensorsOnline}/${eocStats.totalSensors}`,
-      unit: 'Telemetry',
-      delta: `${eocStats.trends.sensorsOnlinePercent}% Network Health`,
+      unit: t('kpi.unitTelemetry'),
+      delta: `${eocStats.trends.sensorsOnlinePercent}% ${t('kpi.networkHealth')}`,
       deltaType: 'good',
       icon: ActivitySquare,
       color: 'text-emerald-400',

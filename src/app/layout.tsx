@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { EOCProvider } from '@/context/EOCContext';
+import { I18nProvider } from '@/context/I18nContext';
 import { PWARegister } from '@/components/pwa/PWARegister';
 
 export const viewport: Viewport = {
@@ -45,10 +46,12 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-eoc-bg text-eoc-text min-h-screen antialiased selection:bg-eoc-accent selection:text-white">
-        <EOCProvider>
-          <PWARegister />
-          {children}
-        </EOCProvider>
+        <I18nProvider>
+          <EOCProvider>
+            <PWARegister />
+            {children}
+          </EOCProvider>
+        </I18nProvider>
       </body>
     </html>
   );

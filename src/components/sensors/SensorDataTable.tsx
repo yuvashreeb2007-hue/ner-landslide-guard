@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { SensorData, SensorType, SensorStatus } from '@/services/sensor/types';
+import { useI18n } from '@/context/I18nContext';
 import { 
   Search, 
   Filter, 
@@ -39,6 +40,7 @@ export function SensorDataTable({
   selectedSensor,
   onSelectSensor,
 }: SensorDataTableProps) {
+  const { t } = useI18n();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -61,6 +63,16 @@ export function SensorDataTable({
     }, 1500);
   };
 
+  const getStatusLabel = (status: SensorStatus) => {
+    switch (status) {
+      case 'ONLINE': return t('sensors.online');
+      case 'WARNING': return t('sensors.warning');
+      case 'CRITICAL': return t('sensors.critical');
+      case 'OFFLINE': return t('sensors.offline');
+      default: return status;
+    }
+  };
+
   return (
     <div className="bg-eoc-card border border-eoc-border rounded-xl shadow-xl overflow-hidden space-y-4 p-4">
       {/* Header with Search and Filter Bar */}
@@ -80,7 +92,7 @@ export function SensorDataTable({
             <Search className="h-3.5 w-3.5 absolute left-2.5 top-2.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search sensor ID, hill location..."
+              placeholder={t('common.search')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:border-sky-500 font-mono w-48 sm:w-56"
@@ -93,11 +105,11 @@ export function SensorDataTable({
             onChange={(e) => setTypeFilter(e.target.value)}
             className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none font-mono"
           >
-            <option value="ALL">All Sensor Types</option>
-            <option value="Soil Moisture">Soil Moisture</option>
-            <option value="Slope Tilt">Slope Tilt</option>
-            <option value="Rain Gauge">Rain Gauge</option>
-            <option value="Ground Movement">Ground Movement</option>
+            <option value="ALL">{t('common.all')} ({t('sensors.colType')})</option>
+            <option value="Soil Moisture">{t('sensors.types.soilMoisture')}</option>
+            <option value="Slope Tilt">{t('sensors.types.slopeTilt')}</option>
+            <option value="Rain Gauge">{t('sensors.types.rainGauge')}</option>
+            <option value="Ground Movement">{t('sensors.types.groundMovement')}</option>
           </select>
 
           {/* Status Filter */}
@@ -106,11 +118,11 @@ export function SensorDataTable({
             onChange={(e) => setStatusFilter(e.target.value)}
             className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none font-mono"
           >
-            <option value="ALL">All Statuses</option>
-            <option value="ONLINE">ONLINE</option>
-            <option value="WARNING">WARNING</option>
-            <option value="CRITICAL">CRITICAL</option>
-            <option value="OFFLINE">OFFLINE</option>
+            <option value="ALL">{t('common.all')} ({t('sensors.colStatus')})</option>
+            <option value="ONLINE">{t('sensors.online')}</option>
+            <option value="WARNING">{t('sensors.warning')}</option>
+            <option value="CRITICAL">{t('sensors.critical')}</option>
+            <option value="OFFLINE">{t('sensors.offline')}</option>
           </select>
         </div>
       </div>
@@ -120,15 +132,15 @@ export function SensorDataTable({
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-900/90 text-slate-400 uppercase font-mono text-[10px] border-b border-slate-800">
             <tr>
-              <th className="p-3">Sensor ID / Status</th>
-              <th className="p-3">Location & District</th>
-              <th className="p-3">Sensor Type</th>
-              <th className="p-3">Current Value</th>
-              <th className="p-3">Safety Threshold</th>
-              <th className="p-3">Battery / Signal</th>
+              <th className="p-3">{t('sensors.colSensorId')} / {t('sensors.colStatus')}</th>
+              <th className="p-3">{t('sensors.colDistrict')}</th>
+              <th className="p-3">{t('sensors.colType')}</th>
+              <th className="p-3">{t('sensors.colCurrentValue')}</th>
+              <th className="p-3">{t('sensors.colThreshold')}</th>
+              <th className="p-3">{t('sensors.colBattery')} / {t('sensors.colSignal')}</th>
               <th className="p-3">Trend</th>
-              <th className="p-3">Last Sync</th>
-              <th className="p-3 text-right">Inspect</th>
+              <th className="p-3">{t('sensors.colLastUpdated')}</th>
+              <th className="p-3 text-right">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-mono">
@@ -166,7 +178,7 @@ export function SensorDataTable({
                             : 'bg-emerald-950 text-emerald-300 border-emerald-800'
                         }`}
                       >
-                        {s.status}
+                        {getStatusLabel(s.status)}
                       </span>
                       <span className="font-bold text-white text-xs">{s.sensorId}</span>
                     </div>
@@ -258,7 +270,7 @@ export function SensorDataTable({
                       }}
                       className="px-2 py-1 bg-slate-800 hover:bg-sky-900 text-sky-300 rounded text-[10px] font-sans font-semibold inline-flex items-center gap-1 transition-all"
                     >
-                      <span>Telemetry</span>
+                      <span>{t('common.details')}</span>
                       <ChevronRight className="h-3 w-3" />
                     </button>
                   </td>
@@ -291,11 +303,11 @@ export function SensorDataTable({
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
             <div className="bg-eoc-surface p-3 rounded-lg border border-eoc-border space-y-1">
-              <span className="text-[10px] text-slate-400 uppercase font-mono block">Current Reading</span>
+              <span className="text-[10px] text-slate-400 uppercase font-mono block">{t('sensors.colCurrentValue')}</span>
               <span className="text-xl font-black font-mono text-sky-400">
                 {selectedSensor.currentValue} {selectedSensor.unit}
               </span>
-              <span className="text-[10px] text-slate-500 block">Threshold: {selectedSensor.threshold} {selectedSensor.unit}</span>
+              <span className="text-[10px] text-slate-500 block">{t('sensors.colThreshold')}: {selectedSensor.threshold} {selectedSensor.unit}</span>
             </div>
 
             <div className="bg-eoc-surface p-3 rounded-lg border border-eoc-border space-y-1">
@@ -309,10 +321,10 @@ export function SensorDataTable({
             <div className="bg-eoc-surface p-3 rounded-lg border border-eoc-border space-y-1">
               <span className="text-[10px] text-slate-400 uppercase font-mono block">Hardware Telemetry</span>
               <div className="flex items-center justify-between font-mono">
-                <span>Battery: <b className="text-emerald-400">{selectedSensor.battery}%</b></span>
-                <span>Signal: <b className="text-indigo-400">{selectedSensor.signalStrength}%</b></span>
+                <span>{t('sensors.colBattery')}: <b className="text-emerald-400">{selectedSensor.battery}%</b></span>
+                <span>{t('sensors.colSignal')}: <b className="text-indigo-400">{selectedSensor.signalStrength}%</b></span>
               </div>
-              <span className="text-[10px] text-slate-500 block">Status: {selectedSensor.status}</span>
+              <span className="text-[10px] text-slate-500 block">{t('sensors.colStatus')}: {getStatusLabel(selectedSensor.status)}</span>
             </div>
 
             <div className="bg-eoc-surface p-3 rounded-lg border border-eoc-border flex flex-col justify-between">

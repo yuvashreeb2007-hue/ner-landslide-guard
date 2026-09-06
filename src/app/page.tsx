@@ -9,23 +9,19 @@ import { IncidentsTable } from '@/components/dashboard/IncidentsTable';
 import { ChartsSection } from '@/components/dashboard/ChartsSection';
 import { EmergencyPrioritySection } from '@/components/dashboard/EmergencyPrioritySection';
 import { useEOC } from '@/context/EOCContext';
+import { useI18n } from '@/context/I18nContext';
 import { 
   Radio, 
-  AlertTriangle, 
   MapPin, 
-  ArrowRight, 
-  ShieldCheck, 
-  Flame, 
   Send,
-  CloudLightning,
-  Sparkles,
   Layers
 } from 'lucide-react';
 import Link from 'next/link';
 import { SeverityBadge } from '@/components/common/SeverityBadge';
 
 export default function DashboardPage() {
-  const { alerts, riskZones, selectedZone, setSelectedZone } = useEOC();
+  const { alerts, eocStats } = useEOC();
+  const { t, getLocalizedAlert } = useI18n();
   const activeAlerts = alerts.filter((a) => a.status === 'Active');
 
   return (
@@ -37,11 +33,11 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
               <h1 className="text-lg md:text-xl font-black text-white tracking-wide font-mono">
-                DISASTER OPERATIONS & EARLY WARNING CENTER
+                {t('dashboard.centerTitle')}
               </h1>
             </div>
             <p className="text-xs text-slate-300">
-              Real-time multi-hazard telemetry, AI slope stability modeling & CAP broadcast network for 8 North Eastern States
+              {t('dashboard.centerSubtitle')}
             </p>
           </div>
 
@@ -51,14 +47,14 @@ export default function DashboardPage() {
               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all"
             >
               <Layers className="h-3.5 w-3.5 text-sky-400" />
-              <span>Expanded GIS Map</span>
+              <span>{t('dashboard.expandedMap')}</span>
             </Link>
             <Link
               href="/field-report"
               className="px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-md shadow-amber-950 transition-all"
             >
               <Send className="h-3.5 w-3.5" />
-              <span>Submit Ground Report</span>
+              <span>{t('dashboard.submitGroundReport')}</span>
             </Link>
           </div>
         </div>
@@ -75,13 +71,15 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-sky-400" />
                   <span className="text-xs font-bold text-white uppercase font-mono tracking-wider">
-                    Interactive Northeast India GIS Hazard Operations Map
+                    {t('dashboard.mapSectionTitle')}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
-                  <span>8 NER States</span>
+                  <span>{t('dashboard.nerStatesCount')}</span>
                   <span>•</span>
-                  <span className="text-emerald-400">142 Online Sensors</span>
+                  <span className="text-emerald-400">
+                    {t('dashboard.sensorsOnlineBadge', { count: eocStats.sensorsOnline })}
+                  </span>
                 </div>
               </div>
 
@@ -104,35 +102,38 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <Radio className="h-4 w-4 text-red-400 animate-pulse" />
                   <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider">
-                    Active Warning Bulletins ({activeAlerts.length})
+                    {t('dashboard.activeBulletinsTitle', { count: activeAlerts.length })}
                   </h3>
                 </div>
                 <Link
                   href="/alerts"
                   className="text-[10px] text-sky-400 hover:text-sky-300 font-mono font-semibold"
                 >
-                  View All CAP Alerts →
+                  {t('dashboard.viewAllCapAlerts')}
                 </Link>
               </div>
 
               <div className="space-y-2.5 max-h-72 overflow-y-auto">
-                {activeAlerts.slice(0, 3).map((alt) => (
-                  <div
-                    key={alt.id}
-                    className="p-3 bg-slate-900/80 rounded-lg border border-red-900/40 hover:border-red-700/60 transition-all space-y-1.5"
-                  >
-                    <div className="flex items-center justify-between">
-                      <SeverityBadge level={alt.severity} size="sm" pulse={alt.severity === 'RED'} />
-                      <span className="text-[10px] font-mono text-slate-400">{alt.issuedTime}</span>
+                {activeAlerts.slice(0, 3).map((alt) => {
+                  const locAlert = getLocalizedAlert(alt);
+                  return (
+                    <div
+                      key={alt.id}
+                      className="p-3 bg-slate-900/80 rounded-lg border border-red-900/40 hover:border-red-700/60 transition-all space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <SeverityBadge level={alt.severity} size="sm" pulse={alt.severity === 'RED'} />
+                        <span className="text-[10px] font-mono text-slate-400">{alt.issuedTime}</span>
+                      </div>
+                      <h4 className="text-xs font-bold text-white">{locAlert.title}</h4>
+                      <p className="text-[11px] text-slate-300 line-clamp-2">{locAlert.reason}</p>
+                      <div className="text-[10px] text-sky-400 font-mono pt-1 border-t border-slate-800 flex justify-between">
+                        <span>{alt.affectedDistrict}, {alt.state}</span>
+                        <span>{t('dashboard.deliveredCount', { count: alt.broadcastDeliveredCount.toLocaleString() })}</span>
+                      </div>
                     </div>
-                    <h4 className="text-xs font-bold text-white">{alt.title}</h4>
-                    <p className="text-[11px] text-slate-300 line-clamp-2">{alt.reason}</p>
-                    <div className="text-[10px] text-sky-400 font-mono pt-1 border-t border-slate-800 flex justify-between">
-                      <span>{alt.affectedDistrict}, {alt.state}</span>
-                      <span>Delivered: {alt.broadcastDeliveredCount.toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

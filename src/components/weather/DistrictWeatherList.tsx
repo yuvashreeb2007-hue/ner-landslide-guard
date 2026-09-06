@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { DistrictWeatherSummary, RainfallThresholdLevel } from '@/services/weather/types';
 import { RainfallThresholdBadge } from './RainfallThresholdBadge';
 import { SeverityBadge } from '@/components/common/SeverityBadge';
+import { useI18n } from '@/context/I18nContext';
 import { 
   CloudRain, 
   Search, 
@@ -27,6 +28,7 @@ export function DistrictWeatherList({
   selectedDistrict,
   onSelectDistrict,
 }: DistrictWeatherListProps) {
+  const { t } = useI18n();
   const [search, setSearch] = useState('');
   const [filterThreshold, setFilterThreshold] = useState<string>('ALL');
 
@@ -47,7 +49,7 @@ export function DistrictWeatherList({
           <CloudRain className="h-5 w-5 text-sky-400" />
           <div>
             <h3 className="text-xs md:text-sm font-bold text-white uppercase font-mono tracking-wider">
-              NORTHEAST INDIA 8-STATE METEOROLOGICAL & RAINFALL MATRIX
+              {t('weather.districtOverviewTitle')}
             </h3>
             <p className="text-[10px] text-slate-400">
               Live AWS telemetry & rainfall threshold classification by administrative district
@@ -61,7 +63,7 @@ export function DistrictWeatherList({
             <Search className="h-3.5 w-3.5 absolute left-2.5 top-2.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search district or state..."
+              placeholder={t('common.search')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:border-sky-500 font-mono w-48 sm:w-56"
@@ -70,17 +72,23 @@ export function DistrictWeatherList({
 
           {/* Threshold filter pills */}
           <div className="flex items-center bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-[10px] font-mono">
-            {['ALL', 'Danger', 'Warning', 'Watch', 'Normal'].map((th) => (
+            {[
+              { key: 'ALL', label: t('common.all') },
+              { key: 'Danger', label: t('risk.levels.DANGER') },
+              { key: 'Warning', label: t('risk.levels.WARNING') },
+              { key: 'Watch', label: t('risk.levels.WATCH') },
+              { key: 'Normal', label: t('risk.levels.NORMAL') },
+            ].map((th) => (
               <button
-                key={th}
-                onClick={() => setFilterThreshold(th)}
+                key={th.key}
+                onClick={() => setFilterThreshold(th.key)}
                 className={`px-2 py-1 rounded transition-all ${
-                  filterThreshold === th
+                  filterThreshold === th.key
                     ? 'bg-sky-600 text-white font-bold'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                {th}
+                {th.label}
               </button>
             ))}
           </div>
@@ -93,13 +101,13 @@ export function DistrictWeatherList({
           <thead className="bg-slate-900/90 text-slate-400 uppercase font-mono text-[10px] border-b border-slate-800">
             <tr>
               <th className="p-3">District / State</th>
-              <th className="p-3">Current Rate</th>
-              <th className="p-3">24h Rainfall</th>
-              <th className="p-3">7-Day Cumulative</th>
-              <th className="p-3">24h / 72h Forecast</th>
+              <th className="p-3">{t('weather.currentRainfall')}</th>
+              <th className="p-3">{t('weather.rainfall24h')}</th>
+              <th className="p-3">{t('weather.rainfall7d')}</th>
+              <th className="p-3">{t('weather.forecast')}</th>
               <th className="p-3">Rainfall Threshold</th>
               <th className="p-3">Landslide Risk Impact</th>
-              <th className="p-3 text-right">Action</th>
+              <th className="p-3 text-right">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-mono">
@@ -129,7 +137,7 @@ export function DistrictWeatherList({
                           {d.district}
                           {isSelected && (
                             <span className="text-[9px] bg-sky-900 text-sky-300 px-1.5 py-0.2 rounded font-mono">
-                              Active
+                              {t('common.active')}
                             </span>
                           )}
                         </div>
@@ -199,7 +207,7 @@ export function DistrictWeatherList({
                       }}
                       className="px-2 py-1 bg-slate-800 hover:bg-sky-900 text-sky-300 rounded text-[10px] font-sans font-semibold inline-flex items-center gap-1 transition-all"
                     >
-                      <span>Inspect</span>
+                      <span>{t('common.details')}</span>
                       <ChevronRight className="h-3 w-3" />
                     </button>
                   </td>

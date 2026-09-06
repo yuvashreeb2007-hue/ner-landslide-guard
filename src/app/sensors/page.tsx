@@ -7,6 +7,7 @@ import { SensorKPICards } from '@/components/sensors/SensorKPICards';
 import { SensorSimulatorControls } from '@/components/sensors/SensorSimulatorControls';
 import { SensorAnalyticsCharts } from '@/components/sensors/SensorAnalyticsCharts';
 import { SensorDataTable } from '@/components/sensors/SensorDataTable';
+import { useI18n } from '@/context/I18nContext';
 import { 
   ActivitySquare, 
   Cpu, 
@@ -19,6 +20,7 @@ import {
 import Link from 'next/link';
 
 export default function SensorsPage() {
+  const { t } = useI18n();
   const { sensors, kpis, isLoading, setScenario, triggerTick } = useSensorFleet();
   const [selectedSensor, setSelectedSensor] = useState<SensorData | null>(null);
 
@@ -34,14 +36,14 @@ export default function SensorsPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base md:text-lg font-black text-white font-mono tracking-wide">
-                  SOIL & GEOTECHNICAL IOT SENSOR MONITORING
+                  {t('sensors.title')}
                 </h1>
                 <span className="bg-emerald-900/40 text-emerald-300 text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-700/50">
-                  LoRaWAN Mesh Live
+                  {t('sensors.meshLive')}
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Real-time telemetry stream for Inclinometers, Piezometers, Wire Extensometers & Soil Moisture Probes
+                {t('sensors.subtitle')}
               </p>
             </div>
           </div>
@@ -52,7 +54,7 @@ export default function SensorsPage() {
               className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 font-mono text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all"
             >
               <Layers className="h-4 w-4 text-sky-400" />
-              <span>View On GIS Map</span>
+              <span>{t('dashboard.expandedMap')}</span>
             </Link>
           </div>
         </div>

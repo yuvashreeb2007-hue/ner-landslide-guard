@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useOfflineSync, QueuedFieldReport, QueueItemStatus } from '@/services/offline';
+import { useI18n } from '@/context/I18nContext';
 import { 
   Wifi, 
   WifiOff, 
@@ -26,6 +27,7 @@ import {
 import Link from 'next/link';
 
 export default function OfflineQueuePage() {
+  const { t } = useI18n();
   const {
     queue,
     metrics,
@@ -69,6 +71,16 @@ export default function OfflineQueuePage() {
         return 'bg-red-950 text-red-300 border-red-700 font-bold';
       default:
         return 'bg-slate-800 text-slate-300 border-slate-700';
+    }
+  };
+
+  const getSyncStatusLabel = (status: QueueItemStatus) => {
+    switch (status) {
+      case 'QUEUED': return t('offline.status.QUEUED');
+      case 'SYNCING': return t('offline.status.SYNCING');
+      case 'SYNCED': return t('offline.status.SYNCED');
+      case 'FAILED': return t('offline.status.FAILED');
+      default: return status;
     }
   };
 
@@ -116,14 +128,14 @@ export default function OfflineQueuePage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base md:text-lg font-black text-white font-mono tracking-wide">
-                  OFFLINE SYNCHRONIZATION QUEUE
+                  {t('offline.title')}
                 </h1>
                 <span className="bg-sky-950 text-sky-300 text-[10px] font-mono px-2 py-0.5 rounded border border-sky-800">
-                  PWA Local Storage Engine
+                  {t('offline.pwaCache')}
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Low-network resilience buffer for crowdsourced hazard observations and field officer telemetries
+                {t('offline.subtitle')}
               </p>
             </div>
           </div>
@@ -135,7 +147,7 @@ export default function OfflineQueuePage() {
               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all"
             >
               <Plus className="h-3.5 w-3.5 text-amber-400" />
-              <span>Enqueue Demo Report</span>
+              <span>{t('offline.addDemo')}</span>
             </button>
 
             <button
@@ -144,7 +156,7 @@ export default function OfflineQueuePage() {
               className="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-md shadow-sky-950 transition-all"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isSyncingAll ? 'animate-spin' : ''}`} />
-              <span>{isSyncingAll ? 'Synchronizing...' : 'Sync All Queued Now'}</span>
+              <span>{isSyncingAll ? t('common.syncing') : t('offline.syncAllNow')}</span>
             </button>
           </div>
         </div>
@@ -173,7 +185,7 @@ export default function OfflineQueuePage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-white font-bold text-sm">
-                  CURRENT CONNECTION: {networkState}
+                  {t('offline.connectionState')}: {networkState === 'ONLINE' ? t('common.online') : networkState === 'SYNCING' ? t('common.syncing') : t('common.offline')}
                 </span>
                 {isSimulatedOffline && (
                   <span className="text-[10px] bg-amber-950 text-amber-300 px-2 py-0.2 rounded border border-amber-700">
@@ -191,7 +203,7 @@ export default function OfflineQueuePage() {
 
           {/* Interactive Simulation Switch */}
           <div className="flex items-center gap-2 bg-black/40 p-2 rounded-lg border border-slate-800">
-            <span className="text-slate-300 text-[11px]">Simulate Offline Mode:</span>
+            <span className="text-slate-300 text-[11px]">{t('offline.simulateOfflineToggle')}:</span>
             <button
               onClick={() => toggleSimulatedOffline(!isSimulatedOffline)}
               className={`px-3 py-1 rounded text-xs font-bold transition-all ${
@@ -200,7 +212,7 @@ export default function OfflineQueuePage() {
                   : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
             >
-              {isSimulatedOffline ? 'Offline (Forced)' : 'Normal (Online)'}
+              {isSimulatedOffline ? `${t('common.offline')} (Forced)` : `${t('common.online')}`}
             </button>
           </div>
         </div>
@@ -212,7 +224,7 @@ export default function OfflineQueuePage() {
               <Clock className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 block">QUEUED (PENDING)</span>
+              <span className="text-[10px] text-slate-400 block">{t('offline.status.QUEUED')}</span>
               <b className="text-amber-300 text-sm">{metrics.queuedCount} Reports</b>
               <span className="text-[10px] text-slate-400 block">Awaiting Network</span>
             </div>
@@ -223,7 +235,7 @@ export default function OfflineQueuePage() {
               <RefreshCw className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 block">IN-FLIGHT SYNCING</span>
+              <span className="text-[10px] text-slate-400 block">{t('offline.status.SYNCING')}</span>
               <b className="text-sky-300 text-sm">{metrics.syncingCount} In Transit</b>
               <span className="text-[10px] text-slate-400 block">HTTP Stream Active</span>
             </div>
@@ -234,7 +246,7 @@ export default function OfflineQueuePage() {
               <CheckCircle2 className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 block">SUCCESSFULLY SYNCED</span>
+              <span className="text-[10px] text-slate-400 block">{t('offline.status.SYNCED')}</span>
               <b className="text-emerald-300 text-sm">{metrics.syncedCount} Uploaded</b>
               <span className="text-[10px] text-slate-400 block">Delivered to EOC</span>
             </div>
@@ -245,7 +257,7 @@ export default function OfflineQueuePage() {
               <AlertTriangle className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 block">FAILED ATTEMPTS</span>
+              <span className="text-[10px] text-slate-400 block">{t('offline.status.FAILED')}</span>
               <b className="text-red-400 text-sm">{metrics.failedCount} Failed</b>
               <span className="text-[10px] text-slate-400 block">Retryable Queue</span>
             </div>
@@ -257,7 +269,7 @@ export default function OfflineQueuePage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-eoc-border pb-3">
             <div>
               <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
-                <span>LOCAL DEVICE SUBMISSION QUEUE</span>
+                <span>{t('offline.queueSize')}</span>
                 <span className="text-slate-400 font-normal">({filteredQueue.length} Items)</span>
               </h3>
               <p className="text-[11px] text-slate-400 font-sans mt-0.5">
@@ -269,7 +281,7 @@ export default function OfflineQueuePage() {
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <input
                 type="text"
-                placeholder="Search report ID, village, district..."
+                placeholder={t('common.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white placeholder-slate-500 focus:outline-none"
@@ -280,11 +292,11 @@ export default function OfflineQueuePage() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-200 focus:outline-none"
               >
-                <option value="ALL">All Statuses</option>
-                <option value="QUEUED">QUEUED</option>
-                <option value="SYNCING">SYNCING</option>
-                <option value="SYNCED">SYNCED</option>
-                <option value="FAILED">FAILED</option>
+                <option value="ALL">{t('common.all')}</option>
+                <option value="QUEUED">{t('offline.status.QUEUED')}</option>
+                <option value="SYNCING">{t('offline.status.SYNCING')}</option>
+                <option value="SYNCED">{t('offline.status.SYNCED')}</option>
+                <option value="FAILED">{t('offline.status.FAILED')}</option>
               </select>
 
               {metrics.syncedCount > 0 && (
@@ -292,7 +304,7 @@ export default function OfflineQueuePage() {
                   onClick={clearSynced}
                   className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg border border-slate-700"
                 >
-                  Clear Synced
+                  {t('offline.clearCompleted')}
                 </button>
               )}
             </div>
@@ -307,8 +319,8 @@ export default function OfflineQueuePage() {
                   <th className="p-2.5">Created Time</th>
                   <th className="p-2.5">Location & District</th>
                   <th className="p-2.5">Hazard / Severity</th>
-                  <th className="p-2.5">Sync Status</th>
-                  <th className="p-2.5 text-right">Actions</th>
+                  <th className="p-2.5">{t('common.status')}</th>
+                  <th className="p-2.5 text-right">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-mono">
@@ -347,7 +359,7 @@ export default function OfflineQueuePage() {
                       </td>
                       <td className="p-2.5">
                         <span className={`px-2 py-0.5 rounded text-[10px] border ${getSyncStatusBadge(item.syncStatus)}`}>
-                          {item.syncStatus}
+                          {getSyncStatusLabel(item.syncStatus)}
                         </span>
                         {item.syncedAt && (
                           <div className="text-[10px] text-slate-500 mt-0.5">
@@ -366,7 +378,7 @@ export default function OfflineQueuePage() {
                             <button
                               onClick={() => retryItem(item.id)}
                               disabled={isOffline}
-                              title="Retry Synchronization"
+                              title={t('offline.retry')}
                               className="p-1.5 bg-sky-950 hover:bg-sky-900 text-sky-300 border border-sky-800 rounded disabled:opacity-40"
                             >
                               <RefreshCw className="h-3 w-3" />
@@ -374,14 +386,14 @@ export default function OfflineQueuePage() {
                           )}
                           <button
                             onClick={() => setInspectItem(item)}
-                            title="Inspect Payload"
+                            title={t('common.details')}
                             className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded"
                           >
                             <Eye className="h-3 w-3" />
                           </button>
                           <button
                             onClick={() => deleteItem(item.id)}
-                            title="Delete Item"
+                            title={t('offline.delete')}
                             className="p-1.5 bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800 rounded"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -403,7 +415,7 @@ export default function OfflineQueuePage() {
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div className="flex items-center gap-2 font-mono">
                   <span className={`px-2 py-0.5 rounded text-[10px] border ${getSyncStatusBadge(inspectItem.syncStatus)}`}>
-                    {inspectItem.syncStatus}
+                    {getSyncStatusLabel(inspectItem.syncStatus)}
                   </span>
                   <h3 className="font-bold text-white text-sm">{inspectItem.id} Payload</h3>
                 </div>
@@ -448,7 +460,7 @@ export default function OfflineQueuePage() {
                   onClick={() => setInspectItem(null)}
                   className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold"
                 >
-                  Close
+                  {t('common.close')}
                 </button>
               </div>
             </div>

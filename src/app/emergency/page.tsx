@@ -5,34 +5,24 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import {
   useEmergencyResponse,
   PrioritizedIncident,
-  EmergencyTeam,
   PriorityTier,
 } from '@/services/emergency';
+import { useI18n } from '@/context/I18nContext';
 import { 
   LifeBuoy, 
   Users, 
   Shield, 
-  MapPin, 
-  Phone, 
-  Truck, 
-  CheckCircle2, 
-  Clock, 
-  AlertTriangle, 
   Send,
   Building2,
-  Tent,
-  ArrowRight,
-  ShieldAlert,
-  Flame,
-  Activity,
-  GitFork,
-  Radio,
-  Sliders,
-  ChevronRight,
-  Info,
-  Check,
-  X,
-  Compass
+  ShieldAlert, 
+  Flame, 
+  Activity, 
+  GitFork, 
+  ChevronRight, 
+  Compass,
+  AlertTriangle,
+  Clock,
+  X
 } from 'lucide-react';
 import { NER_STATES } from '@/data/mockData';
 
@@ -46,6 +36,8 @@ export default function EmergencyPage() {
     recallTeam,
     getRelationshipChain,
   } = useEmergencyResponse();
+
+  const { t, getLocalizedPriority } = useI18n();
 
   // Selected incident for Chain Inspection (Defaults to top P1 incident)
   const [selectedIncidentId, setSelectedIncidentId] = useState<string>(
@@ -108,7 +100,6 @@ export default function EmergencyPage() {
 
   const handleOpenDispatch = (incident: PrioritizedIncident) => {
     setDispatchModalIncident(incident);
-    // Default to a suitable available team in same state
     const matchStateTeam = responseTeams.find(
       (t) => t.state === incident.state && t.status === 'Standing By'
     );
@@ -134,20 +125,20 @@ export default function EmergencyPage() {
             </div>
             <div>
               <h1 className="text-base md:text-lg font-black text-white font-mono tracking-wide flex items-center gap-2">
-                <span>EMERGENCY RESPONSE PRIORITIZATION & TACTICAL DISPATCH</span>
+                <span>{t('emergency.title')}</span>
                 <span className="text-[10px] bg-red-900/80 text-red-200 px-2 py-0.5 rounded-full border border-red-700 uppercase">
-                  Level-2 ICS Active
+                  {t('emergency.icsActive')}
                 </span>
               </h1>
               <p className="text-xs text-slate-400">
-                Multi-Factor Emergency Priority Scoring (0–100), Urgency Classification (P1–P4), and NDRF/SDRF Mountain Battalion Allocation
+                {t('emergency.subtitle')}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs font-mono">
             <span className="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg text-emerald-400 font-bold flex items-center gap-1.5">
               <Shield className="h-3.5 w-3.5" />
-              <span>{metrics.dispatchedCount} of {metrics.totalTeams} Battalions Deployed</span>
+              <span>{t('emergency.battalionsDeployed', { dispatched: metrics.dispatchedCount, total: metrics.totalTeams })}</span>
             </span>
           </div>
         </div>
@@ -159,9 +150,9 @@ export default function EmergencyPage() {
               <Flame className="h-4 w-4 animate-pulse" />
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 block">P1 IMMEDIATE</span>
-              <b className="text-red-400 text-sm">{metrics.p1Count} Critical Incidents</b>
-              <span className="text-[10px] text-slate-400 block">&lt;30m Action Window</span>
+              <span className="text-[10px] text-slate-400 block">{t('emergency.p1Immediate')}</span>
+              <b className="text-red-400 text-sm">{metrics.p1Count} {t('common.critical')}</b>
+              <span className="text-[10px] text-slate-400 block">&lt;30m Window</span>
             </div>
           </div>
 
@@ -170,9 +161,9 @@ export default function EmergencyPage() {
               <AlertTriangle className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 block">P2 URGENT</span>
-              <b className="text-orange-300 text-sm">{metrics.p2Count} High Threat</b>
-              <span className="text-[10px] text-slate-400 block">&lt;60m Deployment</span>
+              <span className="text-[10px] text-slate-400 block">{t('emergency.p2Urgent')}</span>
+              <b className="text-orange-300 text-sm">{metrics.p2Count} {t('common.high')}</b>
+              <span className="text-[10px] text-slate-400 block">&lt;60m Deploy</span>
             </div>
           </div>
 
@@ -181,9 +172,9 @@ export default function EmergencyPage() {
               <Activity className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 block">P3 / P4 QUEUE</span>
-              <b className="text-amber-300 text-sm">{metrics.p3Count + metrics.p4Count} Monitored</b>
-              <span className="text-[10px] text-slate-400 block">Surveillance Active</span>
+              <span className="text-[10px] text-slate-400 block">{t('emergency.p3High')} / {t('emergency.p4Monitor')}</span>
+              <b className="text-amber-300 text-sm">{metrics.p3Count + metrics.p4Count}</b>
+              <span className="text-[10px] text-slate-400 block">{t('common.active')}</span>
             </div>
           </div>
 
@@ -192,8 +183,8 @@ export default function EmergencyPage() {
               <Clock className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 block">FLEET AVG ETA</span>
-              <b className="text-sky-300 text-sm">{metrics.avgEtaMinutes} Minutes</b>
+              <span className="text-[10px] text-slate-400 block">AVG {t('emergency.colEta')}</span>
+              <b className="text-sky-300 text-sm">{metrics.avgEtaMinutes} Min</b>
               <span className="text-[10px] text-slate-400 block">Terrain-Adjusted</span>
             </div>
           </div>
@@ -203,9 +194,9 @@ export default function EmergencyPage() {
               <Users className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 block">POP. PROTECTED</span>
+              <span className="text-[10px] text-slate-400 block">{t('emergency.colPopulation')}</span>
               <b className="text-emerald-300 text-sm">{metrics.totalPopProtected.toLocaleString()}</b>
-              <span className="text-[10px] text-slate-400 block">Across 8 NER States</span>
+              <span className="text-[10px] text-slate-400 block">8 NER States</span>
             </div>
           </div>
         </div>
@@ -217,11 +208,11 @@ export default function EmergencyPage() {
               <div className="flex items-center gap-2">
                 <GitFork className="h-4 w-4 text-purple-400" />
                 <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                  Impact & Response Relationship Chain (Incident ➔ Road ➔ Village ➔ Population ➔ Response Team)
+                  {t('emergency.relationshipChainTitle')} ({t('emergency.stepIncident')} ➔ {t('emergency.stepRoad')} ➔ {t('emergency.stepVillage')} ➔ {t('emergency.stepPopulation')} ➔ {t('emergency.stepResponseTeam')})
                 </h3>
               </div>
               <span className="text-[10px] text-purple-300 font-mono bg-purple-950 px-2 py-0.5 rounded border border-purple-800">
-                Active Focal Incident: {relationshipChain.incident.id}
+                Focal: {relationshipChain.incident.id}
               </span>
             </div>
 
@@ -230,7 +221,7 @@ export default function EmergencyPage() {
               {/* Node 1: Incident */}
               <div className="bg-slate-900/90 p-3 rounded-xl border border-red-800/80 space-y-1 relative">
                 <div className="text-[10px] text-red-400 font-bold flex items-center justify-between">
-                  <span>1. INCIDENT</span>
+                  <span>{t('emergency.stepIncident').toUpperCase()}</span>
                   <span className={`px-1.5 py-0.2 rounded font-black text-[9px] border ${getPriorityBadgeClass(relationshipChain.incident.priorityTier)}`}>
                     {relationshipChain.incident.priorityTier} ({relationshipChain.incident.priorityScore})
                   </span>
@@ -246,7 +237,7 @@ export default function EmergencyPage() {
               {/* Node 2: Road */}
               <div className="bg-slate-900/90 p-3 rounded-xl border border-amber-800/80 space-y-1 relative">
                 <div className="text-[10px] text-amber-400 font-bold flex items-center justify-between">
-                  <span>2. ROADWAY</span>
+                  <span>{t('emergency.stepRoad').toUpperCase()}</span>
                   <span className={`px-1.5 py-0.2 rounded text-[9px] border ${getRoadStatusBadgeClass(relationshipChain.road.status)}`}>
                     {relationshipChain.road.status}
                   </span>
@@ -262,7 +253,7 @@ export default function EmergencyPage() {
               {/* Node 3: Village */}
               <div className="bg-slate-900/90 p-3 rounded-xl border border-sky-800/80 space-y-1 relative">
                 <div className="text-[10px] text-sky-400 font-bold flex items-center justify-between">
-                  <span>3. VILLAGES</span>
+                  <span>{t('emergency.stepVillage').toUpperCase()}</span>
                   <span className="text-sky-300 text-[10px] bg-sky-950 px-1.5 py-0.2 rounded border border-sky-800">
                     {relationshipChain.village.count} Cut Off
                   </span>
@@ -278,14 +269,14 @@ export default function EmergencyPage() {
               {/* Node 4: Population */}
               <div className="bg-slate-900/90 p-3 rounded-xl border border-emerald-800/80 space-y-1 relative">
                 <div className="text-[10px] text-emerald-400 font-bold flex items-center justify-between">
-                  <span>4. POPULATION</span>
+                  <span>{t('emergency.stepPopulation').toUpperCase()}</span>
                   <span className="text-emerald-300 text-[10px] font-bold">
                     {relationshipChain.population.totalExposed.toLocaleString()} Total
                   </span>
                 </div>
                 <h4 className="text-white font-bold font-sans text-xs">{relationshipChain.population.highRiskCount.toLocaleString()} In Danger Zone</h4>
-                <div className="text-slate-400 text-[11px]">{relationshipChain.population.evacuatedCount.toLocaleString()} Evacuated to Safety</div>
-                <div className="text-emerald-300 text-[10px]">Relief Rations: Adequate</div>
+                <div className="text-slate-400 text-[11px]">{relationshipChain.population.evacuatedCount.toLocaleString()} Evacuated</div>
+                <div className="text-emerald-300 text-[10px]">Rations: Adequate</div>
                 <div className="hidden md:block absolute -right-2 top-1/2 transform -translate-y-1/2 z-10 text-slate-500">
                   <ChevronRight className="h-4 w-4 text-purple-400" />
                 </div>
@@ -294,13 +285,13 @@ export default function EmergencyPage() {
               {/* Node 5: Response Team */}
               <div className="bg-slate-900/90 p-3 rounded-xl border border-blue-800/80 space-y-1">
                 <div className="text-[10px] text-blue-400 font-bold flex items-center justify-between">
-                  <span>5. RESPONSE TEAM</span>
+                  <span>{t('emergency.stepResponseTeam').toUpperCase()}</span>
                   <span className="text-sky-300 text-[10px] bg-blue-950 px-1.5 py-0.2 rounded border border-blue-800">
                     ETA: {relationshipChain.responseTeam.etaMinutes}m
                   </span>
                 </div>
                 <h4 className="text-white font-bold font-sans text-xs line-clamp-1">{relationshipChain.responseTeam.teamName}</h4>
-                <div className="text-slate-400 text-[11px]">{relationshipChain.responseTeam.personnelCount} Specialized Rescuers</div>
+                <div className="text-slate-400 text-[11px]">{relationshipChain.responseTeam.personnelCount} Rescuers</div>
                 <div className="text-blue-300 text-[10px]">Base: {relationshipChain.responseTeam.baseLocation}</div>
               </div>
             </div>
@@ -312,11 +303,11 @@ export default function EmergencyPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-eoc-border pb-3">
             <div>
               <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
-                <span>PRIORITY INCIDENT DISPATCH QUEUE</span>
-                <span className="text-slate-400 font-normal">({filteredIncidents.length} Ranked Incidents)</span>
+                <span>{t('emergency.title')}</span>
+                <span className="text-slate-400 font-normal">({filteredIncidents.length} Ranked)</span>
               </h3>
               <p className="text-[11px] text-slate-400 font-sans mt-0.5">
-                Calculated via 7-factor Emergency Priority Score: Risk (25%) + Population (20%) + Road (20%) + Distance (10%) + Severity (10%) + Villages (10%) + Weather (5%)
+                {t('emergency.subtitle')}
               </p>
             </div>
 
@@ -325,7 +316,7 @@ export default function EmergencyPage() {
               <div className="relative min-w-[180px]">
                 <input
                   type="text"
-                  placeholder="Search incident, road, district..."
+                  placeholder={t('incidents.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500"
@@ -337,11 +328,11 @@ export default function EmergencyPage() {
                 onChange={(e) => setPriorityFilter(e.target.value)}
                 className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-200 focus:outline-none"
               >
-                <option value="ALL">All Priorities</option>
-                <option value="P1">P1 — IMMEDIATE</option>
-                <option value="P2">P2 — URGENT</option>
-                <option value="P3">P3 — HIGH</option>
-                <option value="P4">P4 — MONITOR</option>
+                <option value="ALL">{t('common.all')} {t('emergency.colPriority')}</option>
+                <option value="P1">{t('emergency.p1Immediate')}</option>
+                <option value="P2">{t('emergency.p2Urgent')}</option>
+                <option value="P3">{t('emergency.p3High')}</option>
+                <option value="P4">{t('emergency.p4Monitor')}</option>
               </select>
 
               <select
@@ -349,8 +340,8 @@ export default function EmergencyPage() {
                 onChange={(e) => setStateFilter(e.target.value)}
                 className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-200 focus:outline-none"
               >
-                <option value="ALL">All 8 NER States</option>
-                {NER_STATES.map((st) => (
+                <option value="ALL">{t('common.allStates')}</option>
+                {NER_STATES.filter(s => s !== 'All NER').map((st) => (
                   <option key={st} value={st}>{st}</option>
                 ))}
               </select>
@@ -376,7 +367,7 @@ export default function EmergencyPage() {
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 text-xs">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`px-2.5 py-0.5 rounded-full font-mono text-xs font-black border ${getPriorityBadgeClass(inc.priority.tier)}`}>
-                        {inc.priority.tier} — {inc.priority.tierLabel} ({inc.priority.score}/100)
+                        {getLocalizedPriority(inc.priority.tier)} ({inc.priority.score}/100)
                       </span>
                       <span className="font-mono text-xs font-bold text-sky-400">{inc.id}</span>
                       <span className="font-bold text-white text-sm">{inc.title}</span>
@@ -398,28 +389,28 @@ export default function EmergencyPage() {
                   {/* Operational Metrics Bar */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 text-[11px] font-mono bg-black/40 p-2.5 rounded-lg border border-slate-800/80">
                     <div>
-                      <span className="text-slate-500 block text-[10px]">RISK SCORE</span>
+                      <span className="text-slate-500 block text-[10px]">{t('emergency.colRisk')}</span>
                       <b className="text-purple-300">{inc.riskScore} / 100</b>
                     </div>
                     <div>
-                      <span className="text-slate-500 block text-[10px]">POPULATION EXPOSED</span>
-                      <b className="text-amber-300">{inc.affectedPopulation.toLocaleString()} Pax</b>
+                      <span className="text-slate-500 block text-[10px]">{t('emergency.colPopulation')}</span>
+                      <b className="text-amber-300">{inc.affectedPopulation.toLocaleString()}</b>
                     </div>
                     <div>
-                      <span className="text-slate-500 block text-[10px]">AFFECTED VILLAGES</span>
-                      <b className="text-sky-300">{inc.affectedVillages.length} Communities</b>
+                      <span className="text-slate-500 block text-[10px]">{t('emergency.stepVillage')}</span>
+                      <b className="text-sky-300">{inc.affectedVillages.length}</b>
                     </div>
                     <div>
-                      <span className="text-slate-500 block text-[10px]">24H RAINFALL</span>
+                      <span className="text-slate-500 block text-[10px]">{t('drawer.rainfall24h')}</span>
                       <b className="text-blue-300">{inc.rainfall24hMm.toFixed(1)} mm</b>
                     </div>
                     <div>
-                      <span className="text-slate-500 block text-[10px]">ASSIGNED TASKFORCE</span>
-                      <b className="text-emerald-300 line-clamp-1">{inc.assignedTeamName || 'Awaiting Taskforce'}</b>
+                      <span className="text-slate-500 block text-[10px]">{t('emergency.colResponseTeam')}</span>
+                      <b className="text-emerald-300 line-clamp-1">{inc.assignedTeamName || t('common.pending')}</b>
                     </div>
                     <div>
-                      <span className="text-slate-500 block text-[10px]">ESTIMATED ETA</span>
-                      <b className="text-sky-400 font-bold">{inc.estimatedEtaMinutes} Minutes</b>
+                      <span className="text-slate-500 block text-[10px]">{t('emergency.colEta')}</span>
+                      <b className="text-sky-400 font-bold">{inc.estimatedEtaMinutes} Min</b>
                     </div>
                   </div>
 
@@ -427,7 +418,7 @@ export default function EmergencyPage() {
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs pt-1">
                     <div className="space-y-0.5 flex-1">
                       <span className="text-[10px] text-slate-400 font-mono uppercase font-bold block">
-                        Mandated Tactical Action:
+                        {t('drawer.recommendedDirectives')}:
                       </span>
                       <p className="text-slate-200 text-xs font-medium">{inc.recommendedAction}</p>
                     </div>
@@ -441,7 +432,7 @@ export default function EmergencyPage() {
                         className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1"
                       >
                         <Compass className="h-3 w-3 text-purple-400" />
-                        <span>Inspect Chain</span>
+                        <span>{t('emergency.relationshipChainTitle')}</span>
                       </button>
 
                       <button
@@ -456,7 +447,7 @@ export default function EmergencyPage() {
                         }`}
                       >
                         <Send className="h-3.5 w-3.5" />
-                        <span>{isDispatched ? 'Reassign Dispatch' : 'Dispatch Unit'}</span>
+                        <span>{isDispatched ? t('emergency.dispatched') : t('emergency.dispatch')}</span>
                       </button>
                     </div>
                   </div>
@@ -466,12 +457,12 @@ export default function EmergencyPage() {
           </div>
         </div>
 
-        {/* MOCK SPECIALIZED MOUNTAIN RESCUE BATTALIONS (Northeast India Fleet) */}
+        {/* SPECIALIZED MOUNTAIN RESCUE BATTALIONS */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
               <Shield className="h-4 w-4 text-sky-400" />
-              <span>NORTHEAST INDIA SPECIALIZED MOUNTAIN RESCUE TASKFORCES ({responseTeams.length} Battalions)</span>
+              <span>{t('emergency.colResponseTeam')} ({responseTeams.length} Battalions)</span>
             </h3>
             <span className="text-xs text-slate-400 font-mono">NDRF, SDRF & Border Roads Organisation</span>
           </div>
@@ -547,7 +538,7 @@ export default function EmergencyPage() {
                         onClick={() => recallTeam(team.id)}
                         className="text-amber-400 hover:text-amber-300 font-bold underline"
                       >
-                        Recall Unit
+                        {t('emergency.recall')}
                       </button>
                     )}
                   </div>
@@ -609,7 +600,7 @@ export default function EmergencyPage() {
                 <div className="flex items-center gap-2">
                   <LifeBuoy className="h-5 w-5 text-sky-400" />
                   <h3 className="text-sm font-bold text-white font-mono">
-                    AUTHORIZE TACTICAL BATTALION DISPATCH
+                    {t('emergency.modalTitle')}
                   </h3>
                 </div>
                 <button
@@ -625,7 +616,7 @@ export default function EmergencyPage() {
                   <div className="flex items-center justify-between font-mono text-[10px]">
                     <span className="text-slate-400">TARGET DISASTER INCIDENT:</span>
                     <span className={`px-2 py-0.2 rounded font-bold border ${getPriorityBadgeClass(dispatchModalIncident.priority.tier)}`}>
-                      {dispatchModalIncident.priority.tier} Priority ({dispatchModalIncident.priority.score}/100)
+                      {getLocalizedPriority(dispatchModalIncident.priority.tier)} ({dispatchModalIncident.priority.score}/100)
                     </span>
                   </div>
                   <div className="font-bold text-white text-sm">{dispatchModalIncident.location}</div>
@@ -639,7 +630,7 @@ export default function EmergencyPage() {
 
                 <div>
                   <label className="block text-slate-300 font-mono text-[11px] font-bold mb-1">
-                    Select Response Battalion Taskforce:
+                    {t('emergency.assignedTeam')}
                   </label>
                   <select
                     value={selectedTeamId}
@@ -657,7 +648,7 @@ export default function EmergencyPage() {
                 {/* Live Calculated ETA Box */}
                 <div className="bg-blue-950/40 p-3 rounded-xl border border-blue-800 flex items-center justify-between font-mono">
                   <div>
-                    <span className="text-[10px] text-blue-300 uppercase block">Estimated Response Time (ETA):</span>
+                    <span className="text-[10px] text-blue-300 uppercase block">{t('emergency.colEta')}:</span>
                     <b className="text-white text-base">
                       {dispatchModalIncident.estimatedEtaMinutes} Minutes Transit
                     </b>
@@ -673,14 +664,14 @@ export default function EmergencyPage() {
                     onClick={() => setDispatchModalIncident(null)}
                     className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-bold text-xs"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button
                     type="submit"
                     className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-md shadow-blue-950 transition-all"
                   >
                     <Send className="h-3.5 w-3.5" />
-                    <span>Authorize & Deploy Taskforce</span>
+                    <span>{t('emergency.confirmDispatch')}</span>
                   </button>
                 </div>
               </form>
