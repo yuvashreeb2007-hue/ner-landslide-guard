@@ -7,6 +7,7 @@ confidence estimation, and standard operating procedure recommendations.
 import os
 import joblib
 import numpy as np
+import pandas as pd
 from datetime import datetime
 from typing import Dict, Any, List, Tuple
 from app.schemas.prediction import PredictionRequest, PredictionResponse, RiskLevelEnum
@@ -190,8 +191,8 @@ class LandslidePredictor:
             )
 
     def predict(self, req: PredictionRequest) -> PredictionResponse:
-        # Prepare feature vector
-        features = np.array([[
+        # Prepare feature vector as DataFrame with proper column names
+        features = pd.DataFrame([[
             req.rainfall_24h,
             req.rainfall_7d,
             req.soil_moisture,
@@ -201,7 +202,7 @@ class LandslidePredictor:
             req.historical_landslides,
             req.distance_to_road,
             req.distance_to_settlement
-        ]])
+        ]], columns=self.feature_names)
 
         if self.model is not None:
             try:
