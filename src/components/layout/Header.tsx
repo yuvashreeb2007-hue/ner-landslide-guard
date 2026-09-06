@@ -33,8 +33,10 @@ import { SeverityBadge } from '../common/SeverityBadge';
 import { ConnectionIndicator } from '@/components/pwa/ConnectionIndicator';
 import { LanguageSelector } from './LanguageSelector';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export function Header() {
+  const router = useRouter();
   const {
     systemTime,
     selectedState,
@@ -51,7 +53,7 @@ export function Header() {
   } = useEOC();
 
   const { t, getLocalizedAlert } = useI18n();
-  const { user, role, demoLogin, logout, demoAccounts, getRoleDetails } = useAuth();
+  const { user, role, demoLogin, logout, demoAccounts, getRoleDetails, getRoleLandingRoute } = useAuth();
 
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -199,8 +201,11 @@ export function Header() {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-eoc-card hover:bg-slate-800 border border-eoc-border text-xs font-mono transition-all"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-eoc-card hover:bg-slate-800 border border-eoc-border text-xs font-mono transition-all shadow-sm"
               >
+                <span className="hidden md:inline px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-950 text-amber-300 border border-amber-800 tracking-wider">
+                  DEMO MODE
+                </span>
                 <div className="flex items-center gap-1.5">
                   {getRoleIcon(role)}
                   <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold border ${roleInfo.roleBadgeColor}`}>
@@ -219,7 +224,7 @@ export function Header() {
                   {/* Active User Card Header */}
                   <div className="p-3 bg-slate-900 border-b border-slate-800 space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400 font-mono">ACTIVE CLEARANCE</span>
+                      <span className="text-[10px] text-amber-400 font-mono font-bold">⚡ DEMO MODE ACTIVE</span>
                       <span className={`px-2 py-0.2 rounded text-[9px] font-mono font-bold border ${roleInfo.roleBadgeColor}`}>
                         {role}
                       </span>
@@ -233,18 +238,19 @@ export function Header() {
                   {/* Switch Persona in Demo Mode */}
                   <div className="p-2 space-y-1 border-b border-slate-800 bg-slate-950/40">
                     <span className="text-[10px] font-mono text-slate-500 uppercase px-2 py-0.5 block">
-                      Switch Role Persona (Demo Mode):
+                      Switch Role Persona (1-Click Switch & Redirect):
                     </span>
                     {demoAccounts.map((acc) => (
                       <button
                         key={acc.role}
-                        onClick={() => {
-                          demoLogin(acc.role);
+                        onClick={async () => {
+                          await demoLogin(acc.role);
                           setShowUserMenu(false);
+                          router.push(getRoleLandingRoute(acc.role));
                         }}
                         className={`w-full px-2.5 py-1.5 rounded-lg text-left text-xs font-mono flex items-center justify-between transition-all ${
                           role === acc.role
-                            ? 'bg-sky-950 text-sky-300 font-bold'
+                            ? 'bg-sky-950 text-sky-300 font-bold border border-sky-800'
                             : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
@@ -272,11 +278,12 @@ export function Header() {
                       onClick={() => {
                         logout();
                         setShowUserMenu(false);
+                        router.push('/citizen');
                       }}
                       className="px-2.5 py-1 text-red-400 hover:text-red-300 flex items-center gap-1"
                     >
                       <LogOut className="h-3 w-3" />
-                      <span>Guest / Citizen</span>
+                      <span>Switch to Citizen</span>
                     </button>
                   </div>
                 </div>

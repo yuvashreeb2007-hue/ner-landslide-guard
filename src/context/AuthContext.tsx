@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, UserRole, DemoAccountInfo, ROLE_PERMISSIONS } from '@/types/auth';
+import { User, UserRole, DemoAccountInfo, ROLE_PERMISSIONS, ROLE_DEFAULT_ROUTES } from '@/types/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -10,10 +10,11 @@ interface AuthContextType {
   isLoading: boolean;
   role: UserRole;
   demoAccounts: DemoAccountInfo[];
-  login: (usernameOrEmail: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (usernameOrEmail: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   demoLogin: (role: UserRole) => Promise<boolean>;
   logout: () => void;
   canAccessRoute: (pathname: string) => boolean;
+  getRoleLandingRoute: (role?: UserRole) => string;
   getRoleDetails: (role?: UserRole) => {
     allowedPaths: string[];
     restrictedMessage: string;
@@ -148,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth();
   }, []);
 
-  const login = async (usernameOrEmail: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (usernameOrEmail: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
     setIsLoading(true);
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
@@ -176,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(TOKEN_STORAGE_KEY, data.access_token);
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
       setIsLoading(false);
-      return { success: true };
+      return { success: true, user: data.user };
     } catch (err) {
       console.warn('[AuthContext] Backend login unreachable, checking local demo persona:', err);
       // Fallback local match for offline mode
@@ -199,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken('offline-demo-token');
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(fallbackUser));
         setIsLoading(false);
-        return { success: true };
+        return { success: true, user: fallbackUser };
       }
       setIsLoading(false);
       return { success: false, error: 'Connection failed. Please check backend server.' };
@@ -268,12 +269,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const canAccessRoute = (pathname: string): boolean => {
-    if (!user) return pathname === '/' || pathname === '/login';
+    if (!user) return pathname === '/' || pathname === '/login' || pathname === '/citizen';
     const roleConfig = ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.CITIZEN;
     
     // Normalize path
     const normalized = pathname.split('?')[0].replace(/\/$/, '') || '/';
     return roleConfig.allowedPaths.includes(normalized) || user.role === 'ADMIN';
+  };
+
+  const getRoleLandingRoute = (targetRole?: UserRole): string => {
+    const r = targetRole || user?.role || 'CITIZEN';
+    return ROLE_DEFAULT_ROUTES[r] || '/';
   };
 
   const getRoleDetails = (targetRole?: UserRole) => {
@@ -294,6 +300,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         demoLogin,
         logout,
         canAccessRoute,
+        getRoleLandingRoute,
         getRoleDetails,
       }}
     >

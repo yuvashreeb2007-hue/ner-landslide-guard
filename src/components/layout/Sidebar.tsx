@@ -39,102 +39,59 @@ export function Sidebar() {
   const pendingReportsCount = fieldReports.filter(r => r.verificationStatus === 'Pending Verification').length;
   const roleInfo = getRoleDetails(role);
 
-  const navItems = [
-    {
-      label: t('nav.overview'),
-      href: '/',
-      icon: LayoutDashboard,
-      badge: null,
-    },
-    {
-      label: t('nav.map'),
-      href: '/map',
-      icon: MapIcon,
-      badge: `${eocStats.activeCriticalZones} ${t('risk.levels.CRITICAL')}`,
-      badgeColor: 'bg-red-950 text-red-400 border-red-800',
-    },
-    {
-      label: t('nav.predictions'),
-      href: '/predictions',
-      icon: Cpu,
-      badge: t('nav.aiActive'),
-      badgeColor: 'bg-purple-950 text-purple-300 border-purple-800',
-    },
-    {
-      label: t('nav.weather'),
-      href: '/weather',
-      icon: CloudRain,
-      badge: t('nav.imdLive'),
-      badgeColor: 'bg-sky-950 text-sky-300 border-sky-800',
-    },
-    {
-      label: t('nav.sensors'),
-      href: '/sensors',
-      icon: ActivitySquare,
-      badge: `${eocStats.sensorsOnline}/${eocStats.totalSensors}`,
-      badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800',
-    },
-    {
-      label: t('nav.reports'),
-      href: '/reports',
-      icon: FileSpreadsheet,
-      badge: pendingReportsCount > 0 ? `${pendingReportsCount} ${t('common.pending')}` : null,
-      badgeColor: 'bg-amber-950 text-amber-300 border-amber-800',
-    },
-    {
-      label: t('nav.fieldReport'),
-      href: '/field-report',
-      icon: Send,
-      badge: t('nav.citizenSdrf'),
-      badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800',
-    },
-    {
-      label: t('nav.offlineQueue'),
-      href: '/offline-queue',
-      icon: PhoneCall,
-      badge: t('nav.pwaSync'),
-      badgeColor: 'bg-sky-950 text-sky-300 border-sky-800',
-    },
-    {
-      label: t('nav.roads'),
-      href: '/roads',
-      icon: GitFork,
-      badge: `${eocStats.roadsBlocked} ${t('kpi.roadsBlocked')}`,
-      badgeColor: 'bg-orange-950 text-orange-400 border-orange-800',
-    },
-    {
-      label: t('nav.alerts'),
-      href: '/alerts',
-      icon: AlertOctagon,
-      badge: activeAlertsCount > 0 ? `${activeAlertsCount}` : null,
-      badgeColor: 'bg-red-900 text-white font-bold',
-    },
-    {
-      label: t('nav.emergency'),
-      href: '/emergency',
-      icon: LifeBuoy,
-      badge: `${eocStats.activeResponseTeams}`,
-      badgeColor: 'bg-blue-950 text-blue-300 border-blue-800',
-    },
-    {
-      label: t('nav.analytics'),
-      href: '/analytics',
-      icon: BarChart3,
-      badge: null,
-    },
-    {
-      label: t('nav.admin'),
-      href: '/admin',
-      icon: ShieldCheck,
-      badge: null,
-    },
-    {
-      label: t('nav.settings'),
-      href: '/settings',
-      icon: SettingsIcon,
-      badge: null,
-    },
-  ];
+  const getRoleNavItems = () => {
+    switch (role) {
+      case 'ADMIN':
+        return [
+          { label: 'Overview', href: '/dashboard', icon: LayoutDashboard, badge: null },
+          { label: 'Live Risk Map', href: '/map', icon: MapIcon, badge: `${eocStats.activeCriticalZones} CRITICAL`, badgeColor: 'bg-red-950 text-red-400 border-red-800' },
+          { label: 'Risk Predictions', href: '/predictions', icon: Cpu, badge: 'AI Active', badgeColor: 'bg-purple-950 text-purple-300 border-purple-800' },
+          { label: 'Rainfall & Weather', href: '/weather', icon: CloudRain, badge: 'IMD Live', badgeColor: 'bg-sky-950 text-sky-300 border-sky-800' },
+          { label: 'Soil & Sensors', href: '/sensors', icon: ActivitySquare, badge: `${eocStats.sensorsOnline}/${eocStats.totalSensors}`, badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800' },
+          { label: 'Landslide Reports', href: '/reports', icon: FileSpreadsheet, badge: pendingReportsCount > 0 ? `${pendingReportsCount}` : null, badgeColor: 'bg-amber-950 text-amber-300 border-amber-800' },
+          { label: 'Roads & Connectivity', href: '/roads', icon: GitFork, badge: `${eocStats.roadsBlocked} Blocked`, badgeColor: 'bg-orange-950 text-orange-400 border-orange-800' },
+          { label: 'Alerts', href: '/alerts', icon: AlertOctagon, badge: activeAlertsCount > 0 ? `${activeAlertsCount}` : null, badgeColor: 'bg-red-900 text-white font-bold' },
+          { label: 'Emergency Response', href: '/emergency', icon: LifeBuoy, badge: `${eocStats.activeResponseTeams}`, badgeColor: 'bg-blue-950 text-blue-300 border-blue-800' },
+          { label: 'Analytics', href: '/analytics', icon: BarChart3, badge: null },
+          { label: 'Administration', href: '/admin', icon: ShieldCheck, badge: null },
+          { label: 'Settings', href: '/settings', icon: SettingsIcon, badge: null },
+        ];
+      case 'DISTRICT_OFFICER':
+        return [
+          { label: 'District Overview', href: '/district', icon: LayoutDashboard, badge: 'DDMA', badgeColor: 'bg-sky-950 text-sky-300 border-sky-800' },
+          { label: 'Risk Map', href: '/map', icon: MapIcon, badge: null },
+          { label: 'Risk Predictions', href: '/predictions', icon: Cpu, badge: 'AI Model', badgeColor: 'bg-purple-950 text-purple-300 border-purple-800' },
+          { label: 'Weather', href: '/weather', icon: CloudRain, badge: 'AWS Live', badgeColor: 'bg-sky-950 text-sky-300 border-sky-800' },
+          { label: 'Incidents', href: '/emergency', icon: AlertOctagon, badge: activeIncidentsCount > 0 ? `${activeIncidentsCount}` : null, badgeColor: 'bg-red-900 text-white font-bold' },
+          { label: 'Alerts', href: '/alerts', icon: AlertOctagon, badge: activeAlertsCount > 0 ? `${activeAlertsCount}` : null, badgeColor: 'bg-red-900 text-white font-bold' },
+          { label: 'Emergency Response', href: '/emergency', icon: LifeBuoy, badge: null },
+          { label: 'Reports', href: '/reports', icon: FileSpreadsheet, badge: null },
+          { label: 'Settings', href: '/settings', icon: SettingsIcon, badge: null },
+        ];
+      case 'FIELD_OFFICER':
+        return [
+          { label: 'Field Dashboard', href: '/field', icon: LayoutDashboard, badge: 'RECON', badgeColor: 'bg-amber-950 text-amber-300 border-amber-800' },
+          { label: 'New Report', href: '/field-report', icon: Send, badge: '+NEW', badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800' },
+          { label: 'My Reports', href: '/reports', icon: FileSpreadsheet, badge: null },
+          { label: 'Nearby Incidents', href: '/reports', icon: AlertOctagon, badge: null },
+          { label: 'Risk Map', href: '/map', icon: MapIcon, badge: null },
+          { label: 'Offline Queue', href: '/offline-queue', icon: PhoneCall, badge: 'PWA', badgeColor: 'bg-sky-950 text-sky-300 border-sky-800' },
+          { label: 'Settings', href: '/settings', icon: SettingsIcon, badge: null },
+        ];
+      case 'CITIZEN':
+      default:
+        return [
+          { label: 'Home', href: '/citizen', icon: LayoutDashboard, badge: 'PUBLIC', badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800' },
+          { label: 'Risk Map', href: '/map', icon: MapIcon, badge: null },
+          { label: 'Weather Alerts', href: '/alerts', icon: AlertOctagon, badge: activeAlertsCount > 0 ? `${activeAlertsCount}` : null, badgeColor: 'bg-red-900 text-white font-bold' },
+          { label: 'Submit Report', href: '/field-report', icon: Send, badge: 'CITIZEN', badgeColor: 'bg-amber-950 text-amber-300 border-amber-800' },
+          { label: 'Safety Guidance', href: '/citizen', icon: ShieldCheck, badge: null },
+          { label: 'Settings', href: '/settings', icon: SettingsIcon, badge: null },
+        ];
+    }
+  };
+
+  const navItems = getRoleNavItems();
 
   return (
     <aside

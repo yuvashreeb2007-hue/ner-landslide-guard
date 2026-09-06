@@ -16,7 +16,7 @@ from app.schemas.auth import (
 )
 from app.services.user_service import user_service
 from app.auth.security import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-from app.auth.deps import get_current_user
+from app.auth.deps import get_current_user, require_roles
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication & Access Control"])
 
@@ -99,3 +99,32 @@ async def get_demo_accounts():
     Does NOT return or expose passwords.
     """
     return user_service.get_demo_accounts_info()
+
+@auth_router.get("/admin/users", summary="Admin User Management (ADMIN Only)")
+async def manage_users(current_user: UserResponse = Depends(require_roles([UserRole.ADMIN]))):
+    """Admin-only endpoint for user administration. Rejects other roles with 403 Forbidden."""
+    return {
+        "status": "authorized",
+        "message": f"User management accessed by {current_user.full_name} ({current_user.role.value})",
+        "users": [user_service.to_user_response(u) for u in user_service._users.values()]
+    }
+
+@auth_router.post("/emergency/dispatch", summary="Tactical Emergency Dispatch (ADMIN & DISTRICT_OFFICER Only)")
+async def dispatch_emergency_team(current_user: UserResponse = Depends(require_roles([UserRole.ADMIN, UserRole.DISTRICT_OFFICER]))):
+    """Emergency team dispatch action. Rejects FIELD_OFFICER and CITIZEN with 403 Forbidden."""
+    return {
+        "status": "authorized",
+        "message": f"Tactical dispatch authorized by {current_user.full_name} ({current_user.role.value})"
+    }
+
+@auth_router.get("/admin/system-config", summary="State Node System Configuration (ADMIN Only)")
+async def get_system_config(current_user: UserResponse = Depends(require_roles([UserRole.ADMIN]))):
+    """System configuration endpoint. Rejects DISTRICT_OFFICER, FIELD_OFFICER, CITIZEN with 403 Forbidden."""
+    return {
+        "status": "authorized",
+        "message": f"System configuration accessed by {current_user.full_name}",
+        "node_id": "NER-EOC-PRIMARY-01",
+        "radar_feed": "IMD Doppler Guwahati/Sohra/Mohanbari",
+        "gateway": "NDMA CAP-IPAWS v2"
+    }
+

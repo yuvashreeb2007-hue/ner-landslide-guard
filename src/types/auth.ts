@@ -37,6 +37,13 @@ export interface AuthState {
   role: UserRole;
 }
 
+export const ROLE_DEFAULT_ROUTES: Record<UserRole, string> = {
+  ADMIN: '/dashboard',
+  DISTRICT_OFFICER: '/district',
+  FIELD_OFFICER: '/field',
+  CITIZEN: '/citizen',
+};
+
 /**
  * Route Permission Access Matrix according to specifications:
  *
@@ -54,6 +61,10 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
   ADMIN: {
     allowedPaths: [
       '/',
+      '/dashboard',
+      '/district',
+      '/field',
+      '/citizen',
       '/map',
       '/predictions',
       '/weather',
@@ -75,6 +86,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
   DISTRICT_OFFICER: {
     allowedPaths: [
       '/',
+      '/district',
+      '/citizen',
       '/map',
       '/predictions',
       '/weather',
@@ -85,7 +98,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
       '/roads',
       '/alerts',
       '/emergency',
-      '/analytics'
+      '/analytics',
+      '/settings'
     ],
     restrictedMessage: 'District Disaster Management Authority (DDMA) Access Level.',
     roleBadgeColor: 'bg-sky-950 text-sky-300 border-sky-700',
@@ -94,12 +108,15 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
   FIELD_OFFICER: {
     allowedPaths: [
       '/',
+      '/field',
+      '/citizen',
       '/map',
       '/field-report',
       '/offline-queue',
       '/reports',
       '/weather',
-      '/roads'
+      '/roads',
+      '/settings'
     ],
     restrictedMessage: 'First Responder / Field Reconnaissance Access Level.',
     roleBadgeColor: 'bg-amber-950 text-amber-300 border-amber-700',
@@ -108,14 +125,17 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
   CITIZEN: {
     allowedPaths: [
       '/',
+      '/citizen',
       '/map',
       '/weather',
       '/alerts',
       '/field-report',
-      '/offline-queue'
+      '/offline-queue',
+      '/settings'
     ],
     restrictedMessage: 'Citizen & Community Safety Portal Access.',
     roleBadgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-700',
     roleTitle: 'Citizen / Community Volunteer',
   },
 };
+

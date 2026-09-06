@@ -26,7 +26,7 @@ import {
 import Link from 'next/link';
 
 export default function LoginPage() {
-  const { login, demoLogin, demoAccounts, user, role, isLoading } = useAuth();
+  const { login, demoLogin, demoAccounts, user, role, isLoading, getRoleLandingRoute } = useAuth();
   const router = useRouter();
 
   const [username, setUsername] = useState('');
@@ -46,9 +46,10 @@ export default function LoginPage() {
 
     if (result.success) {
       setSuccessRole('Authenticated');
+      const targetPath = getRoleLandingRoute(result.user?.role);
       setTimeout(() => {
-        router.push('/');
-      }, 600);
+        router.push(targetPath);
+      }, 400);
     } else {
       setErrorMsg(result.error || 'Authentication failed. Please verify credentials.');
     }
@@ -62,9 +63,10 @@ export default function LoginPage() {
 
     if (ok) {
       setSuccessRole(targetRole);
+      const targetPath = getRoleLandingRoute(targetRole);
       setTimeout(() => {
-        router.push('/');
-      }, 500);
+        router.push(targetPath);
+      }, 350);
     }
   };
 
