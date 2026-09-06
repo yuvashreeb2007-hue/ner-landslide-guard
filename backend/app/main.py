@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
 from app.api.routes import router
+from app.api.auth import auth_router
 from app.ml.predictor import predictor, MODEL_PATH
 
 @asynccontextmanager
@@ -50,6 +51,7 @@ app.add_middleware(
 
 # Include core REST API routes
 app.include_router(router)
+app.include_router(auth_router, prefix="/api")
 
 @app.get("/")
 def root():

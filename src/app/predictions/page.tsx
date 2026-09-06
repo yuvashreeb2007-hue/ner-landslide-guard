@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useEOC } from '@/context/EOCContext';
 import { MOCK_PREDICTION_MODELS } from '@/data/mockData';
 import { apiClient, PredictionInput, PredictionResult } from '@/services/api/apiClient';
@@ -240,7 +241,11 @@ export default function PredictionsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <ProtectedRoute 
+        requiredRoles={['ADMIN', 'DISTRICT_OFFICER']} 
+        moduleName="AI Risk Prediction Engine & Geotechnical Modeling"
+      >
+        <div className="space-y-6">
         {/* Page Header */}
         <div className="bg-eoc-card p-4 md:p-5 rounded-xl border border-eoc-border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -932,7 +937,8 @@ export default function PredictionsPage() {
             </table>
           </div>
         </div>
-      </div>
+        </div>
+      </ProtectedRoute>
     </MainLayout>
   );
 }

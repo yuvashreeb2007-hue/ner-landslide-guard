@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useSensorFleet, SensorData } from '@/services/sensor';
 import { SensorKPICards } from '@/components/sensors/SensorKPICards';
 import { SensorSimulatorControls } from '@/components/sensors/SensorSimulatorControls';
@@ -26,7 +27,11 @@ export default function SensorsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <ProtectedRoute 
+        requiredRoles={['ADMIN', 'DISTRICT_OFFICER']} 
+        moduleName="Geotechnical Sensor Fleet & IoT Telemetry Telematics"
+      >
+        <div className="space-y-6">
         {/* Operations Header */}
         <div className="bg-eoc-card p-4 md:p-5 rounded-xl border border-eoc-border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -77,7 +82,8 @@ export default function SensorsPage() {
           selectedSensor={selectedSensor}
           onSelectSensor={(s) => setSelectedSensor(s)}
         />
-      </div>
+        </div>
+      </ProtectedRoute>
     </MainLayout>
   );
 }

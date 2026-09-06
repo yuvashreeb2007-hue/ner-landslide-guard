@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useFieldReports, FieldReportRecord, ReportStatus, ReportIncidentType } from '@/services/reporting';
 import { SeverityBadge } from '@/components/common/SeverityBadge';
 import { 
@@ -99,7 +100,11 @@ export default function ReportsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <ProtectedRoute 
+        requiredRoles={['ADMIN', 'DISTRICT_OFFICER', 'FIELD_OFFICER']} 
+        moduleName="Incident Moderation & Engineering Verification"
+      >
+        <div className="space-y-6">
         {/* Operations Header */}
         <div className="bg-eoc-card p-4 md:p-5 rounded-xl border border-eoc-border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -450,7 +455,8 @@ export default function ReportsPage() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      </ProtectedRoute>
     </MainLayout>
   );
 }

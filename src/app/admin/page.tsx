@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useEOC } from '@/context/EOCContext';
 import { 
   ShieldCheck, 
@@ -53,7 +54,11 @@ export default function AdminPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-5">
+      <ProtectedRoute 
+        requiredRoles={['ADMIN']} 
+        moduleName="State EOC Administration & Node Security"
+      >
+        <div className="space-y-5">
         {/* Header */}
         <div className="bg-eoc-card p-4 rounded-xl border border-eoc-border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -240,6 +245,7 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
-  );
+    </ProtectedRoute>
+  </MainLayout>
+);
 }

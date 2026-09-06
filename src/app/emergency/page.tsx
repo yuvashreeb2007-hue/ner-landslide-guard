@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import {
   useEmergencyResponse,
   PrioritizedIncident,
@@ -116,9 +117,13 @@ export default function EmergencyPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-5">
-        {/* Header */}
-        <div className="bg-eoc-card p-4 rounded-xl border border-eoc-border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <ProtectedRoute 
+        requiredRoles={['ADMIN', 'DISTRICT_OFFICER']} 
+        moduleName="Emergency Response Prioritization & Tactical Dispatch"
+      >
+        <div className="space-y-5">
+          {/* Header */}
+          <div className="bg-eoc-card p-4 rounded-xl border border-eoc-border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-red-950 text-red-400 border border-red-800">
               <ShieldAlert className="h-5 w-5 animate-pulse" />
@@ -678,7 +683,8 @@ export default function EmergencyPage() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      </ProtectedRoute>
     </MainLayout>
   );
 }

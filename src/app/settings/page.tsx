@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useEOC } from '@/context/EOCContext';
 import { 
   Settings as SettingsIcon, 
@@ -45,7 +46,11 @@ export default function SettingsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-5">
+      <ProtectedRoute 
+        requiredRoles={['ADMIN']} 
+        moduleName="Command Node System Settings"
+      >
+        <div className="space-y-5">
         {/* Header */}
         <div className="bg-eoc-card p-4 rounded-xl border border-eoc-border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -241,6 +246,7 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
-  );
+    </ProtectedRoute>
+  </MainLayout>
+);
 }

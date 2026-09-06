@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEOC } from '@/context/EOCContext';
 import { useI18n } from '@/context/I18nContext';
+import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard,
   Map as MapIcon,
@@ -23,6 +24,7 @@ import {
   ChevronRight,
   Shield,
   PhoneCall,
+  Lock,
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -30,10 +32,12 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { eocStats, alerts, incidents, fieldReports } = useEOC();
   const { t } = useI18n();
+  const { role, canAccessRoute, getRoleDetails } = useAuth();
 
   const activeAlertsCount = alerts.filter(a => a.status === 'Active').length;
   const activeIncidentsCount = incidents.filter(i => i.status === 'Active').length;
   const pendingReportsCount = fieldReports.filter(r => r.verificationStatus === 'Pending Verification').length;
+  const roleInfo = getRoleDetails(role);
 
   const navItems = [
     {
@@ -186,6 +190,7 @@ export function Sidebar() {
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
+            const isAccessible = canAccessRoute(item.href);
 
             return (
               <Link
@@ -194,27 +199,40 @@ export function Sidebar() {
                 className={`flex items-center justify-between px-2.5 py-2 rounded-md text-xs font-medium transition-all group ${
                   isActive
                     ? 'bg-sky-950/80 text-sky-300 border border-sky-700/60 shadow-sm font-semibold'
-                    : 'text-slate-300 hover:bg-eoc-card hover:text-white'
+                    : isAccessible
+                    ? 'text-slate-300 hover:bg-eoc-card hover:text-white'
+                    : 'text-slate-500 hover:text-slate-400 opacity-60 hover:opacity-90'
                 }`}
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? `${item.label} ${!isAccessible ? '(Restricted)' : ''}` : undefined}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Icon
                     className={`h-4 w-4 shrink-0 transition-colors ${
-                      isActive ? 'text-sky-400' : 'text-slate-400 group-hover:text-slate-200'
+                      isActive
+                        ? 'text-sky-400'
+                        : isAccessible
+                        ? 'text-slate-400 group-hover:text-slate-200'
+                        : 'text-slate-600'
                     }`}
                   />
                   {!collapsed && <span className="truncate">{item.label}</span>}
                 </div>
 
-                {!collapsed && item.badge && (
-                  <span
-                    className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
-                      item.badgeColor || 'bg-slate-800 text-slate-300 border-slate-700'
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
+                {!collapsed && (
+                  <div className="flex items-center gap-1.5">
+                    {!isAccessible && (
+                      <Lock className="h-3 w-3 text-slate-500" />
+                    )}
+                    {item.badge && isAccessible && (
+                      <span
+                        className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                          item.badgeColor || 'bg-slate-800 text-slate-300 border-slate-700'
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
                 )}
               </Link>
             );
@@ -222,20 +240,29 @@ export function Sidebar() {
         </nav>
       </div>
 
-      {/* Bottom Emergency Helpdesk */}
-      <div className="p-3 border-t border-eoc-border bg-eoc-card/60">
+      {/* Bottom Emergency Helpdesk & Role Badge */}
+      <div className="p-3 border-t border-eoc-border bg-eoc-card/60 space-y-2">
         {!collapsed ? (
-          <div className="space-y-1.5 text-[11px]">
-            <div className="flex items-center gap-1.5 text-amber-400 font-bold font-mono">
-              <PhoneCall className="h-3.5 w-3.5" />
-              <span>{t('common.helpline')}</span>
+          <>
+            <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 flex items-center justify-between text-[11px] font-mono">
+              <span className="text-slate-400">CLEARANCE:</span>
+              <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold border ${roleInfo.roleBadgeColor}`}>
+                {role}
+              </span>
             </div>
-            <div className="text-[10px] text-slate-400">
-              {t('common.jointOperations')}
+
+            <div className="space-y-1 text-[11px]">
+              <div className="flex items-center gap-1.5 text-amber-400 font-bold font-mono">
+                <PhoneCall className="h-3.5 w-3.5" />
+                <span>{t('common.helpline')}</span>
+              </div>
+              <div className="text-[10px] text-slate-400">
+                {t('common.jointOperations')}
+              </div>
             </div>
-          </div>
+          </>
         ) : (
-          <div className="flex justify-center text-amber-400" title={t('common.helpline')}>
+          <div className="flex flex-col items-center gap-2 text-amber-400" title={t('common.helpline')}>
             <PhoneCall className="h-4 w-4" />
           </div>
         )}

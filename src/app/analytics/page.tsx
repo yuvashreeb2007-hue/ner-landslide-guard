@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useEOC } from '@/context/EOCContext';
 import { 
   BarChart3, 
@@ -49,7 +50,11 @@ export default function AnalyticsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-5">
+      <ProtectedRoute 
+        requiredRoles={['ADMIN', 'DISTRICT_OFFICER']} 
+        moduleName="Disaster Operations Data Analytics & Forensics"
+      >
+        <div className="space-y-5">
         {/* Header */}
         <div className="bg-eoc-card p-4 rounded-xl border border-eoc-border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -288,7 +293,8 @@ export default function AnalyticsPage() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      </ProtectedRoute>
     </MainLayout>
   );
 }

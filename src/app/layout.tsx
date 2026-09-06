@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { AuthProvider } from '@/context/AuthContext';
 import { EOCProvider } from '@/context/EOCContext';
 import { I18nProvider } from '@/context/I18nContext';
 import { PWARegister } from '@/components/pwa/PWARegister';
@@ -46,12 +47,14 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-eoc-bg text-eoc-text min-h-screen antialiased selection:bg-eoc-accent selection:text-white">
-        <I18nProvider>
-          <EOCProvider>
-            <PWARegister />
-            {children}
-          </EOCProvider>
-        </I18nProvider>
+        <AuthProvider>
+          <I18nProvider>
+            <EOCProvider>
+              <PWARegister />
+              {children}
+            </EOCProvider>
+          </I18nProvider>
+        </AuthProvider>
       </body>
     </html>
   );

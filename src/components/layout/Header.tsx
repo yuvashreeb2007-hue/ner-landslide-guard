@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { useEOC } from '@/context/EOCContext';
 import { useI18n } from '@/context/I18nContext';
+import { useAuth } from '@/context/AuthContext';
 import { NER_STATES } from '@/data/mockData';
+import { UserRole } from '@/types/auth';
 import { 
   Bell, 
   Volume2, 
@@ -17,11 +19,20 @@ import {
   CheckCircle2, 
   Send,
   Sparkles,
-  Activity
+  Activity,
+  User,
+  Shield,
+  LogOut,
+  ChevronDown,
+  Building2,
+  HardHat,
+  Users,
+  ShieldAlert
 } from 'lucide-react';
 import { SeverityBadge } from '../common/SeverityBadge';
 import { ConnectionIndicator } from '@/components/pwa/ConnectionIndicator';
 import { LanguageSelector } from './LanguageSelector';
+import Link from 'next/link';
 
 export function Header() {
   const {
@@ -40,9 +51,11 @@ export function Header() {
   } = useEOC();
 
   const { t, getLocalizedAlert } = useI18n();
+  const { user, role, demoLogin, logout, demoAccounts, getRoleDetails } = useAuth();
 
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [newAlertForm, setNewAlertForm] = useState({
     title: 'RED ALERT: Severe Landslide Threat & Road Cutoff',
     severity: 'RED' as const,
@@ -58,6 +71,7 @@ export function Header() {
   });
 
   const activeAlerts = alerts.filter(a => a.status === 'Active');
+  const roleInfo = getRoleDetails(role);
 
   const handleBroadcastSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +80,15 @@ export function Header() {
       affectedVillages: newAlertForm.affectedVillages.split(',').map(s => s.trim()),
     });
     setShowAlertModal(false);
+  };
+
+  const getRoleIcon = (r: UserRole) => {
+    switch (r) {
+      case 'ADMIN': return <ShieldAlert className="h-3.5 w-3.5 text-purple-400" />;
+      case 'DISTRICT_OFFICER': return <Building2 className="h-3.5 w-3.5 text-sky-400" />;
+      case 'FIELD_OFFICER': return <HardHat className="h-3.5 w-3.5 text-amber-400" />;
+      case 'CITIZEN': return <Users className="h-3.5 w-3.5 text-emerald-400" />;
+    }
   };
 
   return (
@@ -112,9 +135,9 @@ export function Header() {
           <div className="flex items-center gap-3">
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-extrabold tracking-wider text-base md:text-lg bg-gradient-to-r from-sky-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent font-mono">
+                <Link href="/" className="font-extrabold tracking-wider text-base md:text-lg bg-gradient-to-r from-sky-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent font-mono">
                   {t('common.appName')}
-                </span>
+                </Link>
                 <span className="text-[10px] uppercase font-mono bg-sky-950/80 text-sky-300 border border-sky-800/80 px-1.5 py-0.5 rounded flex items-center gap-1">
                   <Activity className="h-3 w-3 text-sky-400 animate-pulse" />
                   {t('common.eocOperational')}
@@ -171,6 +194,94 @@ export function Header() {
 
             {/* Live Network & Offline PWA Status Indicator */}
             <ConnectionIndicator />
+
+            {/* User Profile & Role Switcher Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-eoc-card hover:bg-slate-800 border border-eoc-border text-xs font-mono transition-all"
+              >
+                <div className="flex items-center gap-1.5">
+                  {getRoleIcon(role)}
+                  <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold border ${roleInfo.roleBadgeColor}`}>
+                    {role}
+                  </span>
+                </div>
+                <span className="text-slate-200 hidden xl:inline font-sans truncate max-w-[120px]">
+                  {user?.full_name.split(' ')[0]}
+                </span>
+                <ChevronDown className="h-3 w-3 text-slate-400" />
+              </button>
+
+              {/* User / RBAC Dropdown Menu */}
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-eoc-card border border-eoc-border rounded-xl shadow-2xl z-50 overflow-hidden font-sans animate-in fade-in zoom-in-95 duration-100">
+                  {/* Active User Card Header */}
+                  <div className="p-3 bg-slate-900 border-b border-slate-800 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-slate-400 font-mono">ACTIVE CLEARANCE</span>
+                      <span className={`px-2 py-0.2 rounded text-[9px] font-mono font-bold border ${roleInfo.roleBadgeColor}`}>
+                        {role}
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-bold text-white leading-tight">{user?.full_name}</h4>
+                    <p className="text-[10px] text-slate-400 leading-tight truncate">
+                      {user?.department} • {user?.jurisdiction}
+                    </p>
+                  </div>
+
+                  {/* Switch Persona in Demo Mode */}
+                  <div className="p-2 space-y-1 border-b border-slate-800 bg-slate-950/40">
+                    <span className="text-[10px] font-mono text-slate-500 uppercase px-2 py-0.5 block">
+                      Switch Role Persona (Demo Mode):
+                    </span>
+                    {demoAccounts.map((acc) => (
+                      <button
+                        key={acc.role}
+                        onClick={() => {
+                          demoLogin(acc.role);
+                          setShowUserMenu(false);
+                        }}
+                        className={`w-full px-2.5 py-1.5 rounded-lg text-left text-xs font-mono flex items-center justify-between transition-all ${
+                          role === acc.role
+                            ? 'bg-sky-950 text-sky-300 font-bold'
+                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {getRoleIcon(acc.role)}
+                          <span>{acc.role}</span>
+                        </div>
+                        {role === acc.role && <CheckCircle2 className="h-3.5 w-3.5 text-sky-400" />}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Account Actions */}
+                  <div className="p-2 bg-slate-900 flex items-center justify-between text-xs font-mono">
+                    <Link
+                      href="/login"
+                      onClick={() => setShowUserMenu(false)}
+                      className="px-2.5 py-1 text-sky-400 hover:text-sky-300 flex items-center gap-1"
+                    >
+                      <User className="h-3 w-3" />
+                      <span>Login Portal</span>
+                    </Link>
+
+                    <button
+                      onClick={() => {
+                        logout();
+                        setShowUserMenu(false);
+                      }}
+                      className="px-2.5 py-1 text-red-400 hover:text-red-300 flex items-center gap-1"
+                    >
+                      <LogOut className="h-3 w-3" />
+                      <span>Guest / Citizen</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Simulate Cloudburst Surge Button */}
             <button
