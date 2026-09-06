@@ -11,6 +11,7 @@ import {
   VisionAnalysisResult,
   SAMPLE_DISASTER_PHOTOS 
 } from '@/services/reporting';
+import { useOfflineSync } from '@/services/offline';
 import { 
   Send, 
   MapPin, 
@@ -126,32 +127,48 @@ export default function FieldReportPage() {
     }
   };
 
+  const { enqueueReport, isOffline } = useOfflineSync();
+  const [offlineQueuedReport, setOfflineQueuedReport] = useState<any | null>(null);
+
   // Step 6: Final Submission
   const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    const reportPayload = {
+      incidentType,
+      description: description || `Reported ${incidentType} in ${village}, ${district}.`,
+      severity,
+      latitude,
+      longitude,
+      district,
+      state,
+      village,
+      photoUrl,
+      videoUrl: videoUrl || undefined,
+      reporterType,
+      reporterName: reporterName || 'Community Reporter',
+      contactPhone,
+      roadBlocked,
+      structuresAtRisk,
+      aiVisionAnalysis: visionResult || undefined,
+    };
+
+    if (isOffline) {
+      // Save directly to local persistent offline queue
+      const queued = enqueueReport(reportPayload);
+      setOfflineQueuedReport(queued);
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      const record = await reportingService.submitReport({
-        incidentType,
-        description: description || `Reported ${incidentType} in ${village}, ${district}.`,
-        severity,
-        latitude,
-        longitude,
-        district,
-        state,
-        village,
-        photoUrl,
-        videoUrl: videoUrl || undefined,
-        reporterType,
-        reporterName: reporterName || 'Community Reporter',
-        contactPhone,
-        roadBlocked,
-        structuresAtRisk,
-        aiVisionAnalysis: visionResult || undefined,
-      });
+      const record = await reportingService.submitReport(reportPayload);
       setSubmittedReport(record);
     } catch (err) {
-      console.error('Submission failed:', err);
+      console.warn('Network submission failed, falling back to local offline queue:', err);
+      const queued = enqueueReport(reportPayload);
+      setOfflineQueuedReport(queued);
     } finally {
       setIsSubmitting(false);
     }
@@ -159,6 +176,7 @@ export default function FieldReportPage() {
 
   const handleReset = () => {
     setSubmittedReport(null);
+    setOfflineQueuedReport(null);
     setStep(1);
     setDescription('');
     setVisionResult(null);
@@ -190,19 +208,95 @@ export default function FieldReportPage() {
 
           <div className="flex items-center gap-2">
             <Link
-              href="/reports"
+              href="/offline-queue"
               className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 font-mono text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all"
             >
-              <Eye className="h-4 w-4 text-sky-400" />
-              <span>Admin Moderation Queue</span>
+              <Clock className="h-4 w-4 text-sky-400" />
+              <span>Offline Queue</span>
+            </Link>
+            <Link
+              href="/reports"
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all"
+            >
+              <Eye className="h-4 w-4 text-slate-400" />
+              <span>Admin Queue</span>
             </Link>
           </div>
         </div>
 
         {/* ========================================================================= */}
-        {/* POST-SUBMISSION CONFIRMATION SCREEN */}
+        {/* OFFLINE SAVED CONFIRMATION SCREEN */}
         {/* ========================================================================= */}
-        {submittedReport ? (
+        {offlineQueuedReport ? (
+          <div className="bg-gradient-to-br from-slate-900 via-amber-950/30 to-slate-950 border border-amber-600/80 rounded-2xl p-6 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-300">
+            <div className="text-center space-y-2">
+              <div className="inline-flex p-3 rounded-full bg-amber-950/90 text-amber-400 border border-amber-500 shadow-lg animate-pulse">
+                <Clock className="h-10 w-10" />
+              </div>
+              <h2 className="text-lg md:text-xl font-black text-amber-300 font-mono tracking-wide">
+                Saved offline — waiting for network
+              </h2>
+              <p className="text-xs text-slate-300 max-w-md mx-auto">
+                Your report has been safely saved to your device storage. It will automatically synchronize with the Command Center as soon as internet connection returns.
+              </p>
+            </div>
+
+            {/* Incident Summary Card */}
+            <div className="bg-slate-950/90 border border-amber-900/60 rounded-xl p-4 space-y-3 font-mono text-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase">OFFLINE TRACKING ID</span>
+                  <span className="text-base font-black text-amber-400 tracking-wider">
+                    {offlineQueuedReport.id}
+                  </span>
+                </div>
+                <div className="sm:text-right">
+                  <span className="text-[10px] text-slate-400 block uppercase">SYNC STATUS</span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-950 text-amber-300 border border-amber-700 font-bold">
+                    <Clock className="h-3.5 w-3.5 animate-spin" />
+                    QUEUED (Awaiting Network)
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div>
+                  <span className="text-slate-500 text-[10px] block">HAZARD TYPE</span>
+                  <span className="font-bold text-white font-sans">{offlineQueuedReport.incidentType}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-[10px] block">SEVERITY LEVEL</span>
+                  <span className={`font-bold ${offlineQueuedReport.severity === 'CRITICAL' ? 'text-red-400' : 'text-amber-400'}`}>
+                    {offlineQueuedReport.severity}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-[10px] block">LOCATION</span>
+                  <span className="font-bold text-slate-200 font-sans truncate block">
+                    {offlineQueuedReport.village}, {offlineQueuedReport.district}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link
+                href="/offline-queue"
+                className="w-full sm:w-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-950"
+              >
+                <span>View in Offline Queue</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <button
+                onClick={handleReset}
+                className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs font-bold rounded-lg border border-slate-700 transition-all"
+              >
+                Submit Another Report
+              </button>
+            </div>
+          </div>
+        ) : submittedReport ? (
           <div className="bg-gradient-to-br from-slate-900 via-eoc-card to-slate-950 border border-emerald-600/60 rounded-2xl p-6 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-300">
             <div className="text-center space-y-2">
               <div className="inline-flex p-3 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-600 shadow-lg">

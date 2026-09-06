@@ -19,6 +19,7 @@ import {
   Activity
 } from 'lucide-react';
 import { SeverityBadge } from '../common/SeverityBadge';
+import { ConnectionIndicator } from '@/components/pwa/ConnectionIndicator';
 
 export function Header() {
   const {
@@ -156,6 +157,9 @@ export function Header() {
 
           {/* Right: Actions & Indicators */}
           <div className="flex items-center gap-2">
+            {/* Live Network & Offline PWA Status Indicator */}
+            <ConnectionIndicator />
+
             {/* Simulate Cloudburst Surge Button */}
             <button
               onClick={() => simulateCloudburst('Pakyong')}

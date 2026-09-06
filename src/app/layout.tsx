@@ -1,12 +1,21 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { EOCProvider } from '@/context/EOCContext';
+import { PWARegister } from '@/components/pwa/PWARegister';
+
+export const viewport: Viewport = {
+  themeColor: '#0f172a',
+  width: 'device-width',
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: 'NER LandslideGuard — AI-Based Landslide Risk & Early Warning Platform',
   description: 'Operational Disaster Management & Early Warning GIS Platform for the North Eastern Region of India (Assam, Arunachal Pradesh, Meghalaya, Manipur, Mizoram, Nagaland, Tripura, Sikkim).',
+  manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/icons/icon-192.svg',
+    apple: '/icons/icon-192.svg',
   },
 };
 
@@ -18,6 +27,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0f172a" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link
           rel="stylesheet"
           href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -33,6 +46,7 @@ export default function RootLayout({
       </head>
       <body className="bg-eoc-bg text-eoc-text min-h-screen antialiased selection:bg-eoc-accent selection:text-white">
         <EOCProvider>
+          <PWARegister />
           {children}
         </EOCProvider>
       </body>

@@ -76,6 +76,20 @@ export function Sidebar() {
       badgeColor: 'bg-amber-950 text-amber-300 border-amber-800',
     },
     {
+      label: 'Submit Field Report',
+      href: '/field-report',
+      icon: Send,
+      badge: 'Citizen/SDRF',
+      badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800',
+    },
+    {
+      label: 'Offline Sync Queue',
+      href: '/offline-queue',
+      icon: PhoneCall,
+      badge: 'PWA Sync',
+      badgeColor: 'bg-sky-950 text-sky-300 border-sky-800',
+    },
+    {
       label: 'Roads & Connectivity',
       href: '/roads',
       icon: GitFork,
